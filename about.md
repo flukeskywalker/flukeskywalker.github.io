@@ -1,9 +1,10 @@
 ---
-layout: article
+layout: home
 key: page-about
 ---
-<div style="width:70%; margin:0 auto;" align="center" markdown="1">
-![Would you rather?](../assets/images/wyr.jpg){:width=256px}
+<div style="margin:0 auto;" align="center" markdown="1">
+<img src="../assets/images/wyr.jpg" alt="Would you rather?" />
+    <small>Image taken at Museum Ludwig, Cologne.</small>
 </div>
 
 <div style="text-align:center">

@@ -201,6 +201,11 @@ exclude:
   - /test
   - /vendor
 
+#collections_dir: articles
+#collections:
+#  articles:
+#    output: false
+
 defaults:
   - scope:
       path: ""
