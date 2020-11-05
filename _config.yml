@@ -11,6 +11,7 @@ permalink: pretty
 timezone: America/Los_Angeles
 excerpt_separator: <!--more-->  # you can specify your own separator, of course.
 exclude: ['Gemfile', 'Gemfile.lock', 'Rakefile', 'UploadToGithub.Rakefile', 'README.md']
+future: true
 post:
   template: _post.txt
   extension: md
