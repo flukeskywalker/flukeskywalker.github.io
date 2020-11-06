@@ -172,7 +172,7 @@ blockquote footer {  font-size: 1.1rem;
         letter-spacing: .03em; }
 
 pre, pre code, p code, p pre code { font-family: $code-font;  // removed .code 'class' since code is an actual html tag
-        font-size: 1.2rem;                   // also added p code, p pre code and pre selector to account for Markdown parsing
+        font-size: 1.1rem;                   // also added p code, p pre code and pre selector to account for Markdown parsing
         line-height: 1.71428571;        // of triple backticks plus rationalized line-heights and margins
         margin-top: 1.71428571rem; }
 
@@ -271,8 +271,8 @@ img { max-width: 100%; }
                          width: 50%;
                          margin-top: 0;
                          margin-bottom: 1.96rem;
-                         font-size: 1.0rem;
-                         line-height: 1.96; //changed to bring line heights into rational pattern
+                         font-size: 1.1rem;
+                         line-height: 1.75; //changed to bring line heights into rational pattern
                          vertical-align: baseline;
                          position: relative; }
 
