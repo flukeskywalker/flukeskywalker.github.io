@@ -35,13 +35,13 @@ html, body { height: 100%; }
 
 html{
     text-align: baseline;
-    font-size: 12px;
+    font-size: 13px;
     -webkit-font-smoothing: auto;
     -moz-osx-font-smoothing: grayscale;
 
   }
 
-@media screen and (min-width: 800px){ html{ font-size: 12px;} }
+@media screen and (min-width: 800px){ html{ font-size: 13px;} }
 
 @media screen and (min-width: 900px){ html{ font-size: 13px;} }
 
@@ -49,9 +49,9 @@ html{
 
 @media screen and (min-width: 1100px){ html{ font-size: 13px; } }
 
-@media screen and (min-width: 1200px){ html{ font-size: 13px; } }
+@media screen and (min-width: 1200px){ html{ font-size: 14px; } }
 
-@media screen and (min-width: 1300px){ html{ font-size: 13px; } }
+@media screen and (min-width: 1300px){ html{ font-size: 14px; } }
 
 // Mathjax fonts need TLC
 .mjx-math{
@@ -279,7 +279,7 @@ img { max-width: 100%; }
                          width: 50%;
                          margin-top: 0;
                          margin-bottom: 1.96rem;
-                         font-size: 1.1rem;
+                         font-size: 1.2rem;
                          line-height: 1.75; //changed to bring line heights into rational pattern
                          vertical-align: baseline;
                          position: relative; }
