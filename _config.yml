@@ -25,3 +25,4 @@ plugins:
   - 'jekyll/scholar'
 scholar:
   style: springer-humanities-brackets
+analytics-id: UA-43857392-3
