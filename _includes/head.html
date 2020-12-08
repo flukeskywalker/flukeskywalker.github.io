@@ -19,7 +19,7 @@
   </title>
 
   {% if page.header-img %}
-    <meta property="og:image" content="{{ site.url }}/{{ page.header-img }}" />
+    <meta property="og:image" content="{{ site.baseurl }}/{{ page.header-img }}" />
 	{% endif %}
 
   <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
