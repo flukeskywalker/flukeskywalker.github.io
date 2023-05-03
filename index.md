@@ -5,7 +5,7 @@ title: About
 
 # Rupesh Kumar Srivastava
 
-I am a researcher in Artificial Intelligence, interested in learning algorithms & learning *algorithms*. A list of my publications can be found [on Google Scholar](https://scholar.google.com/citations?user=vTWuk1gAAAAJ&hl=en).
+I am a researcher in Artificial Intelligence, interested in learning algorithms <span style="color:gray">(algorithms for learning from data)</span> & learning *algorithms* <span style="color:gray">(the idea that instead of designing algorithms, we should be learning them)</span>. A list of my publications can be found [on Google Scholar](https://scholar.google.com/citations?user=vTWuk1gAAAAJ&hl=en).
 
 ## Bio
 
