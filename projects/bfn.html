@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>
+    
+      
+          Bayesian Flow Networks (A Twitter Overview)
+      
+    
+  </title>
+
+  
+    <meta property="og:image" content="https://rupeshks.cc/assets/img/2023-08-16-bfn/bfn.gif" />
+    <meta property="twitter:image" content="https://rupeshks.cc/assets/img/2023-08-16-bfn/bfn.gif" />
+	
+
+  <meta name="description" content="A quick twitter-style paper introduction">
+
+  <!-- Google Fonts loaded here depending on setting in _data/options.yml true loads font, blank does not-->
+  
+    <link href='//fonts.googleapis.com/css?family=Lato:400,400italic' rel='stylesheet' type='text/css'>
+  
+  
+  <!-- Load up MathJax script if needed ... specify in /_data/options.yml file-->
+  
+    <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: [
+      "MathMenu.js",
+      "MathZoom.js",
+      "AssistiveMML.js",
+      "a11y/accessibility-menu.js"
+    ],
+    jax: ["input/TeX", "output/CommonHTML"],
+    TeX: {
+      extensions: [
+        "AMSmath.js",
+        "AMSsymbols.js",
+        "noErrors.js",
+        "noUndefined.js",
+      ]
+    }
+  });
+</script>
+
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+ <!--   <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
+  
+
+  <link rel="stylesheet" type="text/css" href="https://rupeshks.cc/css/tufte.css">
+  <!-- <link rel="stylesheet" type="text/css" href="https://rupeshks.cc/css/print.css" media="print"> -->
+
+  <link rel="canonical" href="https://rupeshks.cc/projects/bfn.html">
+
+  <link rel="alternate" type="application/rss+xml" title="Rupesh Kumar Srivastava" href="https://rupeshks.cc/feed.xml" />
+</head>
+
+  <body>
+    <!--- Header and nav template site-wide -->
+<header>
+	<nav class="group">
+	  <a href="https://rupeshks.cc/"><img class="badge" src="https://rupeshks.cc/assets/img/badge_rk.png" alt="CH"></a>
+	  
+		  
+		    
+		      <a href="https://rupeshks.cc/blog/">Blog</a>
+		    
+	    
+  	
+		  
+  	
+		  
+		    
+		      <a href="https://rupeshks.cc/">About</a>
+		    
+	    
+  	
+		  
+		    
+		      <a href="https://rupeshks.cc/css/print.css"></a>
+		    
+	    
+  	
+		  
+  	
+	</nav>
+</header>
+    <article class="group">
+      <h1>Bayesian Flow Networks (A Twitter Overview)</h1>
+<p class="subtitle">August 16, 2023</p>
+
+<p><span style="color: gray">by Alex Graves, Rupesh Kumar Srivastava, Timothy Atkinson and Faustino Gomez</span></p>
+
+<p>This post is a compilation of <a href="https://twitter.com/rupspace/status/1691584987148218841?s=61&amp;t=NoDMXm3EpQb10TiP3CyzHg">a Twitter thread</a> introducing our paper on <a href="https://arxiv.org/abs/2308.07037">Bayesian Flow Networks</a>.
+It gives a very high-level summary of the system in the paper.</p>
+
+<!--more-->
+
+<p>We present a new perspective on the ideas related to diffusion models. BFNs combine Bayesian inference and neural nets to yield a model class with simple objectives that gracefully extends to discrete data.</p>
+
+<p>We motivate BFNs from the perspective of compression (I’ll explain the figure below). The goal of learning is to minimize the cost of communicating the data, formally equivalent to fitting a probabilistic model with max. likelihood since the coding cost equals \(-\log(p_{model}(\text{data}))\).</p>
+<figure><img src="https://rupeshks.cc/assets/img/2023-08-16-bfn/bayesian_flow_overview.png" /><figcaption class="maincolumn-figure"></figcaption></figure>
+
+<p>Warmup: Autoregressive models. Say Alice wants to transmit \(\mathbf{x}\) to Bob, \(\mathbf{x}\) has \(D\) variables or “tokens”, and both have access to the model. Alice sends token number \(d\) at step \(d\) encoded using the conditional model distribution at that step. The avg cost is the cross entropy in bits.</p>
+
+<p>For training the model, we add up the costs at all \(D\) steps and minimize it. But what if instead of sending one token at a time, Alice sends a little information about <em>all</em> the \(D\) tokens at each step? Then Bob can decode all tokens in parallel, leading us to diffusion and BFNs.</p>
+
+<p>Say Alice and Bob agreed on a noise distribution schedule: Alice will send a sample from \(\mathbf{x} + \text{noise}(t)\) at time \(t\). This “sender distribution” formalizes “a little information”. But which distribution to encode this sample with since Bob doesn’t know \(\mathbf{x}\)?</p>
+
+<p>We need a “receiver distribution” that both Alice and Bob have access to, similar to autoregressive case, to encode/decode the noisy samples. Clearly, if Bob can guess \(\mathbf{x}\), guessing \(\mathbf{x} + \text{noise}(t)\) will follow, since \(\text{noise}(t)\) is known. Let’s focus on parameterizing that guess first.</p>
+
+<p>Assume a simple factorized form for guessing \(\mathbf{x}\), e.g. a product of \(D\) normal distributions for continuous data, whose parameters \(\boldsymbol{\theta}\) (mean and variance) are initially unknown to Bob, so he starts with a prior (the standard normal).</p>
+
+\[p_{_I}(\mathbf{x} \mid \boldsymbol{\theta}) = \prod_{d=1}^D p_{_I}(x^{(d)} \mid \theta^{(d)})\]
+
+<p>We call the first guess above the “input distribution” \(p_{_I}\), because \(\mathbf{\theta}\) will be the inputs of our network. The output of the network \(\boldsymbol{\psi}\) will parameterize a similar, “output distribution” \(p_{_O}\). Both \(p_{_I}\) and \(p_{_O}\) will be updated at every step of the communication of noisy samples.</p>
+
+\[p_{_O}(\mathbf{x} \mid \boldsymbol{\psi}) = \prod_{d=1}^D p_{_O}(x^{(d)} \mid \psi^{(d)})\]
+
+<p>The Bayesian part is this: given previous \(\boldsymbol{\theta}\) and a noisy sample with known noise, we can compute new parameters \(\boldsymbol{\theta}'\) for certain distributions easily using Bayes’ theorem. This works because we are operating on independent distributions for each variable, so calculations are simple!</p>
+
+<p>Putting it together:</p>
+<ul>
+  <li>Create sender dist (Fig: A)</li>
+  <li>Use input parameters \(\boldsymbol{\theta}\) to compute \(p_{_O}\) using the network (Fig: B)</li>
+  <li>Use \(p_{_O}\) to construct a receiver dist and communicate a sample from the sender dist (Fig: C)</li>
+  <li>Use Bayesian update to compute \(\boldsymbol{\theta}\) for the next step (Fig: D)</li>
+</ul>
+
+<figure><img src="https://rupeshks.cc/assets/img/2023-08-16-bfn/bayesian_flow_overview_annot.png" /><figcaption class="maincolumn-figure"></figcaption></figure>
+
+<p>Both \(p_{_I}\) and \(p_{_O}\) get updated over time. Bayesian inference precisely updates beliefs about independent variables, and the network models the relationships between the variables. In the continuous time limit, the Bayesian updates become a <em>Bayesian Flow</em> of information from \(\mathbf{x}\) to \(\boldsymbol{\theta}\).</p>
+
+<p>The total communication cost is the sum of costs at each step, which is simply the KL divergence between the sender and receiver distributions (plus a small residual cost at the end). We minimize this to train the network.</p>
+
+<p>Note that unlike diffusion models
+1) there is no need to define a forward process
+2) the noisy sender distributions are independent so deriving the loss in closed form is simple
+3) the net maps from distribution to distribution, not data to distribution.</p>
+
+<p>All this makes it possible for us to easily adapt the BFN framework to continuous, discretized and discrete data in the paper by choosing appropriate distributions. We get very good results on modeling MNIST, CIFAR-10 and text8. <a href="https://arxiv.org/abs/2308.07037">Check it out</a>!</p>
+
+
+
+
+    </article>
+    <span class="print-footer">Bayesian Flow Networks (A Twitter Overview) - August 16, 2023 - Rupesh Kumar Srivastava</span>
+    <footer>
+  <hr class="slender">
+  <ul class="footer-links">
+<!--    <li><a href="mailto:hate@spam.net"><span class="icon-mail3"></span></a></li>    -->
+    
+      <li>
+        <a href="//www.twitter.com/rupspace"><span class="icon-twitter"></span></a>
+      </li>
+    
+      <li>
+        <a href="//github.com/flukeskywalker"><span class="icon-github"></span></a>
+      </li>
+    
+      <li>
+        <a href="//www.linkedin.com/in/rupesh-srivastava-7a2441175/"><span class="icon-linkedin"></span></a>
+      </li>
+      
+  </ul>
+<div class="credits">
+<span>&copy; 2023 &nbsp;&nbsp;RUPESH KUMAR SRIVASTAVA</span></br> <br>
+    <span>Created with the <a href="//github.com/clayh53/tufte-jekyll">Tufte theme </a> for <a href="//jekyllrb.com">Jekyll</a> with help from <a href="https://github.com/Higgcz">Higgcz</a>.</span>
+</div>  
+</footer>
+    <!---->
+<!--&lt;!&ndash; Global site tag (gtag.js) - Google Analytics &ndash;&gt;-->
+<!--<script async-->
+<!--        src="https://www.googletagmanager.com/gtag/js?id=UA-43857392-3">-->
+<!--</script>-->
+<!--<script>-->
+<!--    window.dataLayer = window.dataLayer || [];-->
+<!--    function gtag(){dataLayer.push(arguments);}-->
+<!--    gtag('js', new Date());-->
+<!--    gtag('config', 'UA-43857392-3');-->
+<!--</script>-->
+  </body>
+</html>

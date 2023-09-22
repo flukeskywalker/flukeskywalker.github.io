@@ -1,33 +1,182 @@
----
-layout: null
-nav_exclude: true
----
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>{{ site.title | xml_escape }}</title>
-    <description>{{ site.description | xml_escape }}</description>
-    <link>{{ site.url }}{{ site.baseurl }}/</link>
-    <atom:link href="{{ "/feed.xml" | prepend: site.baseurl | prepend: site.url }}" rel="self" type="application/rss+xml"/>
-    <pubDate>{{ site.time | date_to_rfc822 }}</pubDate>
-    <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
-    <generator>Jekyll v{{ jekyll.version }}</generator>
-    {% for post in site.posts limit:10 %}
-		{% unless post.draft %}
+    <title>Rupesh Kumar Srivastava</title>
+    <description>Homepage of Rupesh Kumar Srivastava, researcher in Artificial Intelligence</description>
+    <link>https://rupeshks.cc/</link>
+    <atom:link href="https://rupeshks.cc/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Fri, 22 Sep 2023 14:55:29 -0700</pubDate>
+    <lastBuildDate>Fri, 22 Sep 2023 14:55:29 -0700</lastBuildDate>
+    <generator>Jekyll v4.3.2</generator>
+    
+		
 		  <item>
-			<title>{{ post.title | xml_escape }}</title>
-			<description>{{ post.content | xml_escape }}</description>
-			<pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
-			<link>{{ post.url | prepend: site.baseurl | prepend: site.url }}</link>
-			<guid isPermaLink="true">{{ post.url | prepend: site.baseurl | prepend: site.url }}</guid>
-			{% for tag in post.tags %}
-			<category>{{ tag | xml_escape }}</category>
-			{% endfor %}
-			{% for cat in post.categories %}
-			<category>{{ cat | xml_escape }}</category>
-			{% endfor %}
+			<title>Bayesian Flow Networks (A Twitter Overview)</title>
+			<description>&lt;p&gt;&lt;span style=&quot;color: gray&quot;&gt;by Alex Graves, Rupesh Kumar Srivastava, Timothy Atkinson and Faustino Gomez&lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;This post is a compilation of &lt;a href=&quot;https://twitter.com/rupspace/status/1691584987148218841?s=61&amp;amp;t=NoDMXm3EpQb10TiP3CyzHg&quot;&gt;a Twitter thread&lt;/a&gt; introducing our paper on &lt;a href=&quot;https://arxiv.org/abs/2308.07037&quot;&gt;Bayesian Flow Networks&lt;/a&gt;.
+It gives a very high-level summary of the system in the paper.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;We present a new perspective on the ideas related to diffusion models. BFNs combine Bayesian inference and neural nets to yield a model class with simple objectives that gracefully extends to discrete data.&lt;/p&gt;
+
+&lt;p&gt;We motivate BFNs from the perspective of compression (I’ll explain the figure below). The goal of learning is to minimize the cost of communicating the data, formally equivalent to fitting a probabilistic model with max. likelihood since the coding cost equals \(-\log(p_{model}(\text{data}))\).&lt;/p&gt;
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2023-08-16-bfn/bayesian_flow_overview.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;Warmup: Autoregressive models. Say Alice wants to transmit \(\mathbf{x}\) to Bob, \(\mathbf{x}\) has \(D\) variables or “tokens”, and both have access to the model. Alice sends token number \(d\) at step \(d\) encoded using the conditional model distribution at that step. The avg cost is the cross entropy in bits.&lt;/p&gt;
+
+&lt;p&gt;For training the model, we add up the costs at all \(D\) steps and minimize it. But what if instead of sending one token at a time, Alice sends a little information about &lt;em&gt;all&lt;/em&gt; the \(D\) tokens at each step? Then Bob can decode all tokens in parallel, leading us to diffusion and BFNs.&lt;/p&gt;
+
+&lt;p&gt;Say Alice and Bob agreed on a noise distribution schedule: Alice will send a sample from \(\mathbf{x} + \text{noise}(t)\) at time \(t\). This “sender distribution” formalizes “a little information”. But which distribution to encode this sample with since Bob doesn’t know \(\mathbf{x}\)?&lt;/p&gt;
+
+&lt;p&gt;We need a “receiver distribution” that both Alice and Bob have access to, similar to autoregressive case, to encode/decode the noisy samples. Clearly, if Bob can guess \(\mathbf{x}\), guessing \(\mathbf{x} + \text{noise}(t)\) will follow, since \(\text{noise}(t)\) is known. Let’s focus on parameterizing that guess first.&lt;/p&gt;
+
+&lt;p&gt;Assume a simple factorized form for guessing \(\mathbf{x}\), e.g. a product of \(D\) normal distributions for continuous data, whose parameters \(\boldsymbol{\theta}\) (mean and variance) are initially unknown to Bob, so he starts with a prior (the standard normal).&lt;/p&gt;
+
+\[p_{_I}(\mathbf{x} \mid \boldsymbol{\theta}) = \prod_{d=1}^D p_{_I}(x^{(d)} \mid \theta^{(d)})\]
+
+&lt;p&gt;We call the first guess above the “input distribution” \(p_{_I}\), because \(\mathbf{\theta}\) will be the inputs of our network. The output of the network \(\boldsymbol{\psi}\) will parameterize a similar, “output distribution” \(p_{_O}\). Both \(p_{_I}\) and \(p_{_O}\) will be updated at every step of the communication of noisy samples.&lt;/p&gt;
+
+\[p_{_O}(\mathbf{x} \mid \boldsymbol{\psi}) = \prod_{d=1}^D p_{_O}(x^{(d)} \mid \psi^{(d)})\]
+
+&lt;p&gt;The Bayesian part is this: given previous \(\boldsymbol{\theta}\) and a noisy sample with known noise, we can compute new parameters \(\boldsymbol{\theta}&apos;\) for certain distributions easily using Bayes’ theorem. This works because we are operating on independent distributions for each variable, so calculations are simple!&lt;/p&gt;
+
+&lt;p&gt;Putting it together:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Create sender dist (Fig: A)&lt;/li&gt;
+  &lt;li&gt;Use input parameters \(\boldsymbol{\theta}\) to compute \(p_{_O}\) using the network (Fig: B)&lt;/li&gt;
+  &lt;li&gt;Use \(p_{_O}\) to construct a receiver dist and communicate a sample from the sender dist (Fig: C)&lt;/li&gt;
+  &lt;li&gt;Use Bayesian update to compute \(\boldsymbol{\theta}\) for the next step (Fig: D)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2023-08-16-bfn/bayesian_flow_overview_annot.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;Both \(p_{_I}\) and \(p_{_O}\) get updated over time. Bayesian inference precisely updates beliefs about independent variables, and the network models the relationships between the variables. In the continuous time limit, the Bayesian updates become a &lt;em&gt;Bayesian Flow&lt;/em&gt; of information from \(\mathbf{x}\) to \(\boldsymbol{\theta}\).&lt;/p&gt;
+
+&lt;p&gt;The total communication cost is the sum of costs at each step, which is simply the KL divergence between the sender and receiver distributions (plus a small residual cost at the end). We minimize this to train the network.&lt;/p&gt;
+
+&lt;p&gt;Note that unlike diffusion models
+1) there is no need to define a forward process
+2) the noisy sender distributions are independent so deriving the loss in closed form is simple
+3) the net maps from distribution to distribution, not data to distribution.&lt;/p&gt;
+
+&lt;p&gt;All this makes it possible for us to easily adapt the BFN framework to continuous, discretized and discrete data in the paper by choosing appropriate distributions. We get very good results on modeling MNIST, CIFAR-10 and text8. &lt;a href=&quot;https://arxiv.org/abs/2308.07037&quot;&gt;Check it out&lt;/a&gt;!&lt;/p&gt;
+
+</description>
+			<pubDate>Wed, 16 Aug 2023 00:00:00 -0700</pubDate>
+			<link>https://rupeshks.cc/projects/bfn.html</link>
+			<guid isPermaLink="true">https://rupeshks.cc/projects/bfn.html</guid>
+			
+			<category>compression</category>
+			
+			<category>bayes</category>
+			
+			
+			<category>projects</category>
+			
 		  </item>
-		{% endunless %}
-    {% endfor %}
+		
+    
+		
+		  <item>
+			<title>ClipUp: A Simple and Powerful Optimizer for Distribution-based Policy Evolution</title>
+			<description>&lt;p&gt;&lt;span style=&quot;color: gray&quot;&gt;by Nihat Engin Toklu, Paweł Liskowski and Rupesh Kumar Srivastava&lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;label for=&quot;img-humanoid&quot; class=&quot;margin-toggle&quot;&gt;⊕&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;img-humanoid&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;marginnote&quot;&gt;&lt;img class=&quot;fullwidth&quot; src=&quot;https://rupeshks.cc/assets/img/2020-12-08-clipup/pgpelib_HumanoidBulletEnv.gif&quot; /&gt;&lt;br /&gt;A neural network trained to control the PyBullet Humanoid using PGPE for gradient estimation and ClipUp for optimization.&lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;ClipUp is a simple adaptive optimizer that makes it easier to solve certain optimization problems in practice.
+&lt;!--more--&gt;
+It is generally applicable, but is designed to be specially useful for distribution-based policy search algorithms such as PGPE &lt;a class=&quot;citation&quot; href=&quot;#sehnke2010&quot;&gt;[1]&lt;/a&gt;, ARS &lt;a class=&quot;citation&quot; href=&quot;#mania2018&quot;&gt;[2]&lt;/a&gt; and OpenAI-ES &lt;a class=&quot;citation&quot; href=&quot;#salimans2017&quot;&gt;[3]&lt;/a&gt; by helping in finding good hyperparameters quickly and intuitively.
+The technique is simple: use &lt;em&gt;normalized&lt;/em&gt; gradient descent with momentum, and clip the parameter &lt;em&gt;updates&lt;/em&gt; (not gradients!).&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://arxiv.org/abs/2008.02387&quot;&gt;Read the full report on arXiv&lt;/a&gt;, extending our PPSN 2020 paper.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/nnaisense/pgpelib&quot;&gt;Get our code on GitHub&lt;/a&gt;, which provides a clean and scalable implementation of PGPE and makes experimenting with this family of algorithms easy.&lt;/p&gt;
+
+&lt;h2 id=&quot;algorithm&quot;&gt;Algorithm&lt;/h2&gt;
+
+&lt;p&gt;&lt;label for=&quot;note-algo&quot; class=&quot;margin-toggle&quot;&gt; ⊕&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-algo&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;marginnote&quot;&gt;Notice that by setting the hyperparameters appropriately, we recover &lt;strong&gt;normalized gradient descent&lt;/strong&gt;. The hyperparameters help us control the algorithm behavior in non-idealized conditions. &lt;/span&gt;
+To get straight to the point, the algorithm is given below.
+Using the metaphors of “heavy-ball” momentum, it computes a new velocity of a ball from the current velocity and gradients, that is then added to the current position to obtain the next position.&lt;/p&gt;
+
+&lt;p&gt;&lt;label for=&quot;note-notation&quot; class=&quot;margin-toggle&quot;&gt; ⊕&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-notation&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;marginnote&quot;&gt;Bold symbols denote vectors. &lt;/span&gt;
+\(\textbf{Initialization: } \text{Velocity } \boldsymbol{v_0} = \boldsymbol{0}\) &lt;br /&gt;
+\(\textbf{Hyperparameters: }\) &lt;br /&gt;
+\(\text{Step size } \alpha, \text{Maximum speed } v^{\text{max}}, \text{Momentum } m\) &lt;br /&gt;
+\(\textbf{Input: } \text{Estimated gradient } \nabla f(\boldsymbol{x}_k)\)
+&lt;br /&gt;&lt;/p&gt;
+
+&lt;p&gt;\(\text{// }\textit{Velocity update with normalized gradient}\) &lt;br /&gt;
+\(\boldsymbol{v&apos;}_{k+1} \gets m \cdot \boldsymbol{v}_k + \alpha \cdot \big( \nabla f(\boldsymbol{x}_k) \,/\, ||\nabla f(\boldsymbol{x}_k)|| \big)\) &lt;br /&gt;
+\(\text{// }\textit{Clip velocity based on norm}\) &lt;br /&gt;
+\(\text{if } ||\boldsymbol{v&apos;}_{k+1}|| &amp;gt; v^{\text{max}}\) &lt;br /&gt;
+\(\quad\) \(\boldsymbol{v}_{k+1} \gets v^{\text{max}} \cdot \big( \boldsymbol{v&apos;}_{k+1} \,/\, ||\boldsymbol{v&apos;}_{k+1}|| \big)\) &lt;br /&gt;
+\(\text{else }\) &lt;br /&gt;
+\(\quad\) \(\boldsymbol{v}_{k+1} \gets \boldsymbol{v&apos;}_{k+1}\) &lt;br /&gt;
+\(\textbf{Return: }\boldsymbol{v}_{k+1}\)&lt;/p&gt;
+
+&lt;p&gt;ClipUp comes with a strategy for setting and tuning hyperparameters for control problems.
+Start by setting \(m=0.9\) and \(\alpha=v^{\text{max}}/2\),&lt;label for=&quot;note-alpha&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-alpha&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;\(\alpha\) serves as the &lt;em&gt;initial speed&lt;/em&gt; at the first iteration and the rate at which velocity changes after that. &lt;/span&gt; which leaves \(v^{\text{max}}\) as the main hyperparameter to tune.
+Next, use \(v^{\text{max}}\) to determine a key hyperparameter of PGPE: \(\boldsymbol{\sigma}\), the initial standard deviation of Gaussian noise used for estimating the gradient.
+\(||\boldsymbol{\sigma}||\) and \(v^{\text{max}}\) have the same “type”&lt;label for=&quot;note-types&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-types&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;They are Euclidean distances in parameter space. &lt;/span&gt; so we recommend tuning their ratio instead.
+Based on experiments with several environments, we have found that ratios between 10 to 20 work well as a starting point.
+If computational resources are limited, tune only \(v^{\text{max}}\), otherwise tune the multipliers above for improvements in performance.&lt;label for=&quot;note-hypers&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-hypers&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;We recommend tuning the \(||\boldsymbol{\sigma}||/v^{\text{max}}\) ratio, the \(\alpha\) multiplier and \(m\), in order. &lt;/span&gt;
+See Section 4 of our paper to understand how these hyperparameters can be interpreted and how their values are related to each other.&lt;/p&gt;
+
+&lt;h2 id=&quot;why-clipup&quot;&gt;Why ClipUp?&lt;/h2&gt;
+
+&lt;p&gt;During our experiments with continuous control tasks, we noticed that adjusting hyperparameters often felt like tweaking knobs whose impact on algorithm behavior we couldn’t easily predict.&lt;label for=&quot;note-sim&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-sim&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;Experiments in our paper use representative tasks based on the MuJoCo and PyBullet physics simulators, but this is a general issue we have faced during practical applications of RL algorithms. &lt;/span&gt;
+When tackling high-dimensional non-convex optimization problems, it is not sufficient to know that an optimizer has good theoretical properties with some ideal hyperparameter settings, since this does not take into account the typical workflow a practitioner might have when solving a problem. 
+This workflow usually consists of starting with default hyperparameter settings of the optimizer, and then attempting to adjust both these values and the remaining hyperparameters of the method to improve results.
+Many practitioners do not have access to, or can not allocate a large amount of computational resources to perform a large automated hyperparameter search.&lt;/p&gt;
+
+&lt;h3 id=&quot;some-desirable-properties-of-optimizers&quot;&gt;Some Desirable Properties of Optimizers&lt;/h3&gt;
+
+&lt;p&gt;From the perspective of &lt;strong&gt;optimizers as components of a problem solving strategy&lt;/strong&gt;, we consider some questions that a practitioner might ask before deciding to use an optimizer.&lt;/p&gt;
+
+&lt;p&gt;&lt;span class=&quot;newthought&quot;&gt;Q1:&lt;/span&gt;  Are there &lt;strong&gt;reasonably good default settings&lt;/strong&gt; for the hyperparameters, that often provide a good starting point for my problem class?&lt;/p&gt;
+
+&lt;p&gt;&lt;span class=&quot;newthought&quot;&gt;Q2:&lt;/span&gt;  Can I intuitively &lt;strong&gt;interpret the effects of adjusting hyperparameters&lt;/strong&gt; on the optimizer behavior?&lt;/p&gt;
+
+&lt;p&gt;&lt;span class=&quot;newthought&quot;&gt;Q3:&lt;/span&gt;  Are there &lt;strong&gt;interpretable relationships between hyperparameters&lt;/strong&gt;, that help me understand how some hyperparamters should be set in comparison to others?&lt;/p&gt;
+
+&lt;p&gt;&lt;span class=&quot;newthought&quot;&gt;Q4:&lt;/span&gt;  Does the optimizer have robustness to &lt;strong&gt;variations in problem definition&lt;/strong&gt;, such as different reward functions that I might experiment with for a given task?&lt;/p&gt;
+
+&lt;p&gt;We have found that for ClipUp, the answer to these questions is &lt;em&gt;yes&lt;/em&gt;, more so than other common optimizers.
+As a result we can often quickly configure it to learn successful policies.
+In particular, it is a great fit for distribution-based search because its hyperparameters can be intuitively interpreted in context of the sampling-based policy gradient estimation algorithm.&lt;label for=&quot;sn-pgpe&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;sn-pgpe&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;We used PGPE, but the arguments apply to any Evolutionary or Randomized Search strategy based on related principles. &lt;/span&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;summary-of-results&quot;&gt;Summary of Results&lt;/h2&gt;
+
+&lt;p&gt;Our paper explains how these useful properties of ClipUp arise and presents several results on a range of simulated continuous control benchmarks, including the challenging PyBullet Humanoid.
+The highlights are summarized by the following plots, all using 30 runs aggregated for comparison:&lt;/p&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2020-12-08-clipup/clipupvsadamhumanoid.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;ClipUp &lt;strong&gt;matches or exceeds the performance of Adam&lt;/strong&gt; under moderate amount of hyperparameter tuning that one might use in practice.&lt;/figcaption&gt;&lt;/figure&gt;
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2020-12-08-clipup/humanoidLittlepopClipVsNoclip.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;The clipping operator of ClipUp leads to more &lt;strong&gt;stable training when using low population sizes&lt;/strong&gt; (here 1/8th of the original).&lt;/figcaption&gt;&lt;/figure&gt;
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2020-12-08-clipup/humanoidMoreLrClipVsNoClip.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;Clipping the updates allows one to enjoy &lt;strong&gt;faster training using higher learning rates&lt;/strong&gt; while keeping the momentum in check.&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;For further results and analysis, read &lt;a href=&quot;https://arxiv.org/abs/2008.02387&quot;&gt;our paper&lt;/a&gt;!&lt;/p&gt;
+
+&lt;h3 id=&quot;references&quot;&gt;References&lt;/h3&gt;
+
+&lt;ol class=&quot;bibliography&quot;&gt;&lt;li&gt;&lt;span id=&quot;sehnke2010&quot;&gt;1. Sehnke, Frank, Christian Osendorfer, Thomas Rückstieß, Alex Graves, Jan Peters, and Jürgen Schmidhuber. 2010. Parameter-exploring policy gradients. &lt;i&gt;Neural Networks&lt;/i&gt; 23. Elsevier: 551–559.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;mania2018&quot;&gt;2. Mania, Horia, Aurelia Guy, and Benjamin Recht. 2018. Simple random search of static linear policies is competitive for reinforcement learning. In &lt;i&gt;Advances in Neural Information Processing Systems&lt;/i&gt;, 1800–1809.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;salimans2017&quot;&gt;3. Salimans, Tim, Jonathan Ho, Xi Chen, Szymon Sidor, and Ilya Sutskever. 2017. Evolution strategies as a scalable alternative to reinforcement learning. &lt;i&gt;arXiv preprint arXiv:1703.03864&lt;/i&gt;.&lt;/span&gt;&lt;/li&gt;&lt;/ol&gt;
+</description>
+			<pubDate>Tue, 08 Dec 2020 00:00:00 -0800</pubDate>
+			<link>https://rupeshks.cc/projects/clipup.html</link>
+			<guid isPermaLink="true">https://rupeshks.cc/projects/clipup.html</guid>
+			
+			<category>projects</category>
+			
+			<category>evolution</category>
+			
+			
+			<category>projects</category>
+			
+		  </item>
+		
+    
   </channel>
 </rss>

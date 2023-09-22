@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>
+    
+      
+          ClipUp: A Simple and Powerful Optimizer for Distribution-based Policy Evolution
+      
+    
+  </title>
+
+  
+    <meta property="og:image" content="https://rupeshks.cc/assets/img/2020-12-08-clipup/pgpelib_HumanoidBulletEnv.gif" />
+    <meta property="twitter:image" content="https://rupeshks.cc/assets/img/2020-12-08-clipup/pgpelib_HumanoidBulletEnv.gif" />
+	
+
+  <meta name="description" content="An optimizer designed for practitioners, by practitioners.">
+
+  <!-- Google Fonts loaded here depending on setting in _data/options.yml true loads font, blank does not-->
+  
+    <link href='//fonts.googleapis.com/css?family=Lato:400,400italic' rel='stylesheet' type='text/css'>
+  
+  
+  <!-- Load up MathJax script if needed ... specify in /_data/options.yml file-->
+  
+    <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: [
+      "MathMenu.js",
+      "MathZoom.js",
+      "AssistiveMML.js",
+      "a11y/accessibility-menu.js"
+    ],
+    jax: ["input/TeX", "output/CommonHTML"],
+    TeX: {
+      extensions: [
+        "AMSmath.js",
+        "AMSsymbols.js",
+        "noErrors.js",
+        "noUndefined.js",
+      ]
+    }
+  });
+</script>
+
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+ <!--   <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
+  
+
+  <link rel="stylesheet" type="text/css" href="https://rupeshks.cc/css/tufte.css">
+  <!-- <link rel="stylesheet" type="text/css" href="https://rupeshks.cc/css/print.css" media="print"> -->
+
+  <link rel="canonical" href="https://rupeshks.cc/projects/clipup.html">
+
+  <link rel="alternate" type="application/rss+xml" title="Rupesh Kumar Srivastava" href="https://rupeshks.cc/feed.xml" />
+</head>
+
+  <body>
+    <!--- Header and nav template site-wide -->
+<header>
+	<nav class="group">
+	  <a href="https://rupeshks.cc/"><img class="badge" src="https://rupeshks.cc/assets/img/badge_rk.png" alt="CH"></a>
+	  
+		  
+		    
+		      <a href="https://rupeshks.cc/blog/">Blog</a>
+		    
+	    
+  	
+		  
+  	
+		  
+		    
+		      <a href="https://rupeshks.cc/">About</a>
+		    
+	    
+  	
+		  
+		    
+		      <a href="https://rupeshks.cc/css/print.css"></a>
+		    
+	    
+  	
+		  
+  	
+	</nav>
+</header>
+    <article class="group">
+      <h1>ClipUp: A Simple and Powerful Optimizer for Distribution-based Policy Evolution</h1>
+<p class="subtitle">December 8, 2020</p>
+
+<p><span style="color: gray">by Nihat Engin Toklu, Paweł Liskowski and Rupesh Kumar Srivastava</span></p>
+
+<p><label for="img-humanoid" class="margin-toggle">⊕</label><input type="checkbox" id="img-humanoid" class="margin-toggle" /><span class="marginnote"><img class="fullwidth" src="https://rupeshks.cc/assets/img/2020-12-08-clipup/pgpelib_HumanoidBulletEnv.gif" /><br />A neural network trained to control the PyBullet Humanoid using PGPE for gradient estimation and ClipUp for optimization.</span></p>
+
+<p>ClipUp is a simple adaptive optimizer that makes it easier to solve certain optimization problems in practice.
+<!--more-->
+It is generally applicable, but is designed to be specially useful for distribution-based policy search algorithms such as PGPE <a class="citation" href="#sehnke2010">[1]</a>, ARS <a class="citation" href="#mania2018">[2]</a> and OpenAI-ES <a class="citation" href="#salimans2017">[3]</a> by helping in finding good hyperparameters quickly and intuitively.
+The technique is simple: use <em>normalized</em> gradient descent with momentum, and clip the parameter <em>updates</em> (not gradients!).</p>
+
+<p><a href="https://arxiv.org/abs/2008.02387">Read the full report on arXiv</a>, extending our PPSN 2020 paper.</p>
+
+<p><a href="https://github.com/nnaisense/pgpelib">Get our code on GitHub</a>, which provides a clean and scalable implementation of PGPE and makes experimenting with this family of algorithms easy.</p>
+
+<h2 id="algorithm">Algorithm</h2>
+
+<p><label for="note-algo" class="margin-toggle"> ⊕</label><input type="checkbox" id="note-algo" class="margin-toggle" /><span class="marginnote">Notice that by setting the hyperparameters appropriately, we recover <strong>normalized gradient descent</strong>. The hyperparameters help us control the algorithm behavior in non-idealized conditions. </span>
+To get straight to the point, the algorithm is given below.
+Using the metaphors of “heavy-ball” momentum, it computes a new velocity of a ball from the current velocity and gradients, that is then added to the current position to obtain the next position.</p>
+
+<p><label for="note-notation" class="margin-toggle"> ⊕</label><input type="checkbox" id="note-notation" class="margin-toggle" /><span class="marginnote">Bold symbols denote vectors. </span>
+\(\textbf{Initialization: } \text{Velocity } \boldsymbol{v_0} = \boldsymbol{0}\) <br />
+\(\textbf{Hyperparameters: }\) <br />
+\(\text{Step size } \alpha, \text{Maximum speed } v^{\text{max}}, \text{Momentum } m\) <br />
+\(\textbf{Input: } \text{Estimated gradient } \nabla f(\boldsymbol{x}_k)\)
+<br /></p>
+
+<p>\(\text{// }\textit{Velocity update with normalized gradient}\) <br />
+\(\boldsymbol{v'}_{k+1} \gets m \cdot \boldsymbol{v}_k + \alpha \cdot \big( \nabla f(\boldsymbol{x}_k) \,/\, ||\nabla f(\boldsymbol{x}_k)|| \big)\) <br />
+\(\text{// }\textit{Clip velocity based on norm}\) <br />
+\(\text{if } ||\boldsymbol{v'}_{k+1}|| &gt; v^{\text{max}}\) <br />
+\(\quad\) \(\boldsymbol{v}_{k+1} \gets v^{\text{max}} \cdot \big( \boldsymbol{v'}_{k+1} \,/\, ||\boldsymbol{v'}_{k+1}|| \big)\) <br />
+\(\text{else }\) <br />
+\(\quad\) \(\boldsymbol{v}_{k+1} \gets \boldsymbol{v'}_{k+1}\) <br />
+\(\textbf{Return: }\boldsymbol{v}_{k+1}\)</p>
+
+<p>ClipUp comes with a strategy for setting and tuning hyperparameters for control problems.
+Start by setting \(m=0.9\) and \(\alpha=v^{\text{max}}/2\),<label for="note-alpha" class="margin-toggle sidenote-number"></label><input type="checkbox" id="note-alpha" class="margin-toggle" /><span class="sidenote">\(\alpha\) serves as the <em>initial speed</em> at the first iteration and the rate at which velocity changes after that. </span> which leaves \(v^{\text{max}}\) as the main hyperparameter to tune.
+Next, use \(v^{\text{max}}\) to determine a key hyperparameter of PGPE: \(\boldsymbol{\sigma}\), the initial standard deviation of Gaussian noise used for estimating the gradient.
+\(||\boldsymbol{\sigma}||\) and \(v^{\text{max}}\) have the same “type”<label for="note-types" class="margin-toggle sidenote-number"></label><input type="checkbox" id="note-types" class="margin-toggle" /><span class="sidenote">They are Euclidean distances in parameter space. </span> so we recommend tuning their ratio instead.
+Based on experiments with several environments, we have found that ratios between 10 to 20 work well as a starting point.
+If computational resources are limited, tune only \(v^{\text{max}}\), otherwise tune the multipliers above for improvements in performance.<label for="note-hypers" class="margin-toggle sidenote-number"></label><input type="checkbox" id="note-hypers" class="margin-toggle" /><span class="sidenote">We recommend tuning the \(||\boldsymbol{\sigma}||/v^{\text{max}}\) ratio, the \(\alpha\) multiplier and \(m\), in order. </span>
+See Section 4 of our paper to understand how these hyperparameters can be interpreted and how their values are related to each other.</p>
+
+<h2 id="why-clipup">Why ClipUp?</h2>
+
+<p>During our experiments with continuous control tasks, we noticed that adjusting hyperparameters often felt like tweaking knobs whose impact on algorithm behavior we couldn’t easily predict.<label for="note-sim" class="margin-toggle sidenote-number"></label><input type="checkbox" id="note-sim" class="margin-toggle" /><span class="sidenote">Experiments in our paper use representative tasks based on the MuJoCo and PyBullet physics simulators, but this is a general issue we have faced during practical applications of RL algorithms. </span>
+When tackling high-dimensional non-convex optimization problems, it is not sufficient to know that an optimizer has good theoretical properties with some ideal hyperparameter settings, since this does not take into account the typical workflow a practitioner might have when solving a problem. 
+This workflow usually consists of starting with default hyperparameter settings of the optimizer, and then attempting to adjust both these values and the remaining hyperparameters of the method to improve results.
+Many practitioners do not have access to, or can not allocate a large amount of computational resources to perform a large automated hyperparameter search.</p>
+
+<h3 id="some-desirable-properties-of-optimizers">Some Desirable Properties of Optimizers</h3>
+
+<p>From the perspective of <strong>optimizers as components of a problem solving strategy</strong>, we consider some questions that a practitioner might ask before deciding to use an optimizer.</p>
+
+<p><span class="newthought">Q1:</span>  Are there <strong>reasonably good default settings</strong> for the hyperparameters, that often provide a good starting point for my problem class?</p>
+
+<p><span class="newthought">Q2:</span>  Can I intuitively <strong>interpret the effects of adjusting hyperparameters</strong> on the optimizer behavior?</p>
+
+<p><span class="newthought">Q3:</span>  Are there <strong>interpretable relationships between hyperparameters</strong>, that help me understand how some hyperparamters should be set in comparison to others?</p>
+
+<p><span class="newthought">Q4:</span>  Does the optimizer have robustness to <strong>variations in problem definition</strong>, such as different reward functions that I might experiment with for a given task?</p>
+
+<p>We have found that for ClipUp, the answer to these questions is <em>yes</em>, more so than other common optimizers.
+As a result we can often quickly configure it to learn successful policies.
+In particular, it is a great fit for distribution-based search because its hyperparameters can be intuitively interpreted in context of the sampling-based policy gradient estimation algorithm.<label for="sn-pgpe" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-pgpe" class="margin-toggle" /><span class="sidenote">We used PGPE, but the arguments apply to any Evolutionary or Randomized Search strategy based on related principles. </span></p>
+
+<h2 id="summary-of-results">Summary of Results</h2>
+
+<p>Our paper explains how these useful properties of ClipUp arise and presents several results on a range of simulated continuous control benchmarks, including the challenging PyBullet Humanoid.
+The highlights are summarized by the following plots, all using 30 runs aggregated for comparison:</p>
+
+<figure><img src="https://rupeshks.cc/assets/img/2020-12-08-clipup/clipupvsadamhumanoid.png" /><figcaption class="maincolumn-figure">ClipUp <strong>matches or exceeds the performance of Adam</strong> under moderate amount of hyperparameter tuning that one might use in practice.</figcaption></figure>
+<figure><img src="https://rupeshks.cc/assets/img/2020-12-08-clipup/humanoidLittlepopClipVsNoclip.png" /><figcaption class="maincolumn-figure">The clipping operator of ClipUp leads to more <strong>stable training when using low population sizes</strong> (here 1/8th of the original).</figcaption></figure>
+<figure><img src="https://rupeshks.cc/assets/img/2020-12-08-clipup/humanoidMoreLrClipVsNoClip.png" /><figcaption class="maincolumn-figure">Clipping the updates allows one to enjoy <strong>faster training using higher learning rates</strong> while keeping the momentum in check.</figcaption></figure>
+
+<p>For further results and analysis, read <a href="https://arxiv.org/abs/2008.02387">our paper</a>!</p>
+
+<h3 id="references">References</h3>
+
+<ol class="bibliography"><li><span id="sehnke2010">1. Sehnke, Frank, Christian Osendorfer, Thomas Rückstieß, Alex Graves, Jan Peters, and Jürgen Schmidhuber. 2010. Parameter-exploring policy gradients. <i>Neural Networks</i> 23. Elsevier: 551–559.</span></li>
+<li><span id="mania2018">2. Mania, Horia, Aurelia Guy, and Benjamin Recht. 2018. Simple random search of static linear policies is competitive for reinforcement learning. In <i>Advances in Neural Information Processing Systems</i>, 1800–1809.</span></li>
+<li><span id="salimans2017">3. Salimans, Tim, Jonathan Ho, Xi Chen, Szymon Sidor, and Ilya Sutskever. 2017. Evolution strategies as a scalable alternative to reinforcement learning. <i>arXiv preprint arXiv:1703.03864</i>.</span></li></ol>
+
+
+
+    </article>
+    <span class="print-footer">ClipUp: A Simple and Powerful Optimizer for Distribution-based Policy Evolution - December 8, 2020 - Rupesh Kumar Srivastava</span>
+    <footer>
+  <hr class="slender">
+  <ul class="footer-links">
+<!--    <li><a href="mailto:hate@spam.net"><span class="icon-mail3"></span></a></li>    -->
+    
+      <li>
+        <a href="//www.twitter.com/rupspace"><span class="icon-twitter"></span></a>
+      </li>
+    
+      <li>
+        <a href="//github.com/flukeskywalker"><span class="icon-github"></span></a>
+      </li>
+    
+      <li>
+        <a href="//www.linkedin.com/in/rupesh-srivastava-7a2441175/"><span class="icon-linkedin"></span></a>
+      </li>
+      
+  </ul>
+<div class="credits">
+<span>&copy; 2023 &nbsp;&nbsp;RUPESH KUMAR SRIVASTAVA</span></br> <br>
+    <span>Created with the <a href="//github.com/clayh53/tufte-jekyll">Tufte theme </a> for <a href="//jekyllrb.com">Jekyll</a> with help from <a href="https://github.com/Higgcz">Higgcz</a>.</span>
+</div>  
+</footer>
+    <!---->
+<!--&lt;!&ndash; Global site tag (gtag.js) - Google Analytics &ndash;&gt;-->
+<!--<script async-->
+<!--        src="https://www.googletagmanager.com/gtag/js?id=UA-43857392-3">-->
+<!--</script>-->
+<!--<script>-->
+<!--    window.dataLayer = window.dataLayer || [];-->
+<!--    function gtag(){dataLayer.push(arguments);}-->
+<!--    gtag('js', new Date());-->
+<!--    gtag('config', 'UA-43857392-3');-->
+<!--</script>-->
+  </body>
+</html>
