@@ -10,7 +10,7 @@ markdown_ext: "markdown,mkdown,mkdn,mkd,md"
 permalink: pretty
 timezone: America/Los_Angeles
 excerpt_separator: <!--more-->  # you can specify your own separator, of course.
-exclude: ['Gemfile', 'Gemfile.lock', 'Rakefile', 'UploadToGithub.Rakefile', 'README.md']
+exclude: ['Gemfile', 'Gemfile.lock', 'Rakefile', 'UploadToGithub.Rakefile', 'README.md', 'workflow.txt']
 future: true
 post:
   template: _post.txt

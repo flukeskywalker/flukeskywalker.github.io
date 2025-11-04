@@ -18,7 +18,9 @@ A list of my publications can be found [on Google Scholar](https://scholar.googl
 
 ## Bio
 
-Currently I am a Senior Research Scientist at [NNAISENSE](https://www.nnaisense.com). I was one of the first employees at the company, and also play various other roles including managing the software infrastructure team.
+I am currently at the [Institute of Foundation Models](https://ifm.mbzuai.ac.ae/) in Silicon Valley, a new initiative dedicated to developing completely open-source large-scale foundation models. I lead our new Agents team and work on Reinforcement Learning and Reasoning research.
+
+Previously, I was a Senior Research Scientist at [NNAISENSE](https://www.nnaisense.com). I was one of the first employees at the company, and also played various other roles including managing the software infrastructure team.
 
 I completed my PhD in 2018 at [the Swiss AI lab IDSIA](http://www.idsia.ch/) / [USI](https://www.inf.usi.ch/en) in [Lugano, Switzerland](https://en.wikipedia.org/wiki/Lugano) supervised by [Jürgen Schmidhuber](http://people.idsia.ch/~juergen/).
 My dissertation was [New Architectures for Very Deep Learning](https://doc.rero.ch/record/322586), focused on the training of very deep networks.

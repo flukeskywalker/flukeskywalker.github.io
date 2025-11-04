@@ -1,0 +1,5 @@
+Steps:
+1. Add, commit, and push your source changes (e.g. `git add index.md`, `git commit -m "…"`, `git push origin master-new`).
+2. Deploy the site with `bundle exec rake publish`.
+
+Note: Running through `bundle exec` ensures the task uses the gem versions pinned in the project `Gemfile`; only skip it if you know your system gems match.
