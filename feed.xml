@@ -1,33 +1,419 @@
----
-layout: null
-nav_exclude: true
----
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>{{ site.title | xml_escape }}</title>
-    <description>{{ site.description | xml_escape }}</description>
-    <link>{{ site.url }}{{ site.baseurl }}/</link>
-    <atom:link href="{{ "/feed.xml" | prepend: site.baseurl | prepend: site.url }}" rel="self" type="application/rss+xml"/>
-    <pubDate>{{ site.time | date_to_rfc822 }}</pubDate>
-    <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
-    <generator>Jekyll v{{ jekyll.version }}</generator>
-    {% for post in site.posts limit:10 %}
-		{% unless post.draft %}
+    <title>Rupesh Kumar Srivastava</title>
+    <description>Homepage of Rupesh Kumar Srivastava, researcher in Artificial Intelligence</description>
+    <link>https://rupeshks.cc/</link>
+    <atom:link href="https://rupeshks.cc/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Mon, 03 Nov 2025 23:53:34 -0800</pubDate>
+    <lastBuildDate>Mon, 03 Nov 2025 23:53:34 -0800</lastBuildDate>
+    <generator>Jekyll v4.4.1</generator>
+    
+		
 		  <item>
-			<title>{{ post.title | xml_escape }}</title>
-			<description>{{ post.content | xml_escape }}</description>
-			<pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
-			<link>{{ post.url | prepend: site.baseurl | prepend: site.url }}</link>
-			<guid isPermaLink="true">{{ post.url | prepend: site.baseurl | prepend: site.url }}</guid>
-			{% for tag in post.tags %}
-			<category>{{ tag | xml_escape }}</category>
-			{% endfor %}
-			{% for cat in post.categories %}
-			<category>{{ cat | xml_escape }}</category>
-			{% endfor %}
+			<title>Weighted Skip Connections are Not Harmful for Deep Nets</title>
+			<description>&lt;p&gt;The paper &lt;a href=&quot;https://arxiv.org/abs/1603.05027&quot;&gt;Identity Mappings in Deep Residual Networks&lt;/a&gt; has design mistakes leading to incorrect conclusions about training deep networks with gated skip connections.
+You should try gated/weighted skip connections yourself and see if they improve results on your problems.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;Before continuing, this should go without saying but in any case: This post is purely in the spirit of scientific discussion. I have deep respect for the authors’ many contributions to the field.&lt;/p&gt;
+
+&lt;p&gt;&lt;label for=&quot;note-credit&quot; class=&quot;margin-toggle&quot;&gt; ⊕&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-credit&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;marginnote&quot;&gt;Side-note: I fully agree with Lucas’ side-take that OpenAI papers have been consistently the best at giving proper credit to past work among the big labs. I’ve often mentioned this in private but more people should acknowledge this publicly. &lt;/span&gt;
+A recent &lt;a href=&quot;https://lucasb.eyer.be/snips/residuals.html&quot;&gt;blog post&lt;/a&gt; by Lucas Beyer points readers to the paper &lt;a href=&quot;https://arxiv.org/abs/1603.05027&quot;&gt;Identity Mappings in Deep Residual Networks&lt;/a&gt; as playing a key role in the history of development of skip connections.
+Unfortunately, (partially) due to the mistakes made in this paper in comparing to &lt;a href=&quot;https://arxiv.org/abs/1507.06228&quot;&gt;Highway Networks&lt;/a&gt;, some researchers believe that ResNets are the only viable and scalable variant of HighwayNets, which were published earlier.
+&lt;label for=&quot;note-jump&quot; class=&quot;margin-toggle&quot;&gt; ⊕&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-jump&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;marginnote&quot;&gt;&lt;a href=&quot;#the-mistakes&quot;&gt;Quick jump to the mistakes.&lt;/a&gt; &lt;/span&gt;
+Below are &lt;strong&gt;three&lt;/strong&gt; experimental results as evidence that this is false.&lt;/p&gt;
+
+&lt;h2 id=&quot;background&quot;&gt;Background&lt;/h2&gt;
+
+&lt;p&gt;To begin, here’s the conclusion of the paper regarding messing with the shortcut or skip connections in its own words:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Multiplicative manipulations (scaling, gating, 1×1 convolutions, and dropout) on the shortcuts can hamper
+information propagation and lead to optimization problems.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;… the degradation of these models is caused by optimization issues, instead of representational abilities.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;This conclusion is supported by the following key figure from the paper:&lt;/p&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2025-01-11-skip/curves_shortcuts.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;Figure 3 from &lt;em&gt;Identity Mappings in Deep Residual Networks&lt;/em&gt;.&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;Focus on the top-right plot which compares Resnets to &lt;em&gt;exclusive gating&lt;/em&gt; networks, which is the paper’s name for the design used by &lt;a href=&quot;https://arxiv.org/abs/1507.06228&quot;&gt;Highway Networks&lt;/a&gt;, the predecessor to Resnets.&lt;label for=&quot;note-highway&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-highway&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;Quick summary: HighwayNets said “instead of the typical \(y=H(x)\) for a neural net layer, do \(y = H(x)T(x) + xC(x)\), where T and C are learnable gates. The variant of this used in experiments was \(H(x)T(x) + x(1 - T(x))\). ResNets said “do \(y=H(x) + x\)”. &lt;/span&gt;
+Clearly, the Resnet design leads to improved optimization (lower training loss) and hence a better final result on the test set (lower error rate), despite the fact that the gated network has more parameters (hence more computation) at its disposal.
+This, taken together with the other plots, does indeed support the conclusion regarding multiplicative manipulations on the shortcuts: they impede optimization and should be avoided!&lt;/p&gt;
+
+&lt;h2 id=&quot;the-mistakes&quot;&gt;The Mistakes&lt;/h2&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2025-01-11-skip/shortcuts.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;Annotated subfigure 2(c) from the paper, with newly introduced elements (excessively) highlighted in red.&lt;/figcaption&gt;&lt;/figure&gt;
+&lt;p&gt;When comparing a proposed method to a previous method, one needs to implement the previous method correctly.
+This is where the mistakes happened, as highlighted in the figure above.
+If you read the Highway Networks papers, then this paper, you should ask: a) why are 1x1 convolutions used for the gates when the HighwayNets paper used the same function classes for \(H\) and \(T\)? b) why is an extra ReLU used after the addition which is absent in the HighwayNets papers?
+And finally, what happens if we remove these newly introduced elements?
+We arrive at the following design that follows the HighwayNets papers:&lt;/p&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2025-01-11-skip/coupled_highway_original.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;Original Highway Network design, which removes the newly introduced elements highlighted above.&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;evidence-1&quot;&gt;Evidence 1&lt;/h2&gt;
+
+&lt;p&gt;Below is a new version of the top-right plot, this time following the design from the HighwayNets papers. 
+We take the ResNet-v1, remove the final ReLU, and instead of 1x1 gates use the same receptive field and number of units as the non-identity path. The number of units in Highway layers is slightly reduced.&lt;label for=&quot;note-params&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-params&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;The fact that the HighwayNet actually outperforms the ResNet can be explained by the fact that despite reducing the width by a factor of 0.875, it has more parameters. See &lt;a href=&quot;#appendix-b&quot;&gt;notes &amp;amp; recommentations&lt;/a&gt; for a short discussion about this. &lt;/span&gt;&lt;/p&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2025-01-11-skip/new_plot.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;Comparing Resnet to correctly implemented Highway Nets. The training setup is similar to that in the Identity Mappings paper, with slight variations such as training for 200 epochs instead of 64k batches, from the codebase &lt;a href=&quot;https://github.com/akamaster/pytorch_resnet_cifar10&quot;&gt;here&lt;/a&gt;.&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;Clearly the optimization difficulties have disappeared, and gating does not seem to hamper the ability of the network to learn with over 100 layers.
+This directly contradicts the conclusion of the Identity Mappings paper that any manipulation of the shortcuts hurts information propagation.
+The design introduced by the paper to represent HighwayNets lead to poor training because the gates did not have enough information to learn when input signals should be transformed vs copied over.&lt;/p&gt;
+
+&lt;p&gt;If you’d like to reproduce these training curves, &lt;a href=&quot;https://github.com/flukeskywalker/highway-resnet-comparison&quot;&gt;the code and logs are here&lt;/a&gt;.
+See &lt;a href=&quot;#appendix-a&quot;&gt;more comparisons&lt;/a&gt; to see what happens if we remove the two changes one-by-one instead of together.&lt;/p&gt;
+
+&lt;h2 id=&quot;evidence-2&quot;&gt;Evidence 2&lt;/h2&gt;
+
+&lt;p&gt;This is just a pointer to already published results.
+In a follow-up paper on arXiv in 2016 (published in ICLR 2017), we discussed the same issue and showed the lack of optimization difficulties for 50-layer HighwayNets on ImageNet: see &lt;a href=&quot;https://arxiv.org/pdf/1612.07771#page=8.36&quot;&gt;Section 5 [pdf link]&lt;/a&gt; of &lt;a href=&quot;https://arxiv.org/abs/1612.07771&quot;&gt;Highway and Residual Networks learn Unrolled Iterative Estimation&lt;/a&gt;.
+Unfortunately this paper is not very well known outside the small set of people interested in the iterative estimation view, so you are probably unfamiliar with it.
+In addition to these experiments, I think it has some cool ideas about the working of these deep networks, so check it out!&lt;/p&gt;
+
+&lt;h2 id=&quot;evidence-3&quot;&gt;Evidence 3&lt;/h2&gt;
+
+&lt;p&gt;When the excellent &lt;a href=&quot;https://arxiv.org/abs/2110.00476&quot;&gt;ResNet strikes back&lt;/a&gt; paper came out, I did similar experiments by directly converting ResNets to HighwayNets (with reduced widths) and running the improved training recipe &lt;em&gt;A2&lt;/em&gt; from the paper.
+The goal was to check if HighwayNets only work well for around 50 layers on ImageNet etc, and perhaps deeper nets on larger datasets require simple residual connections.
+Here are the results on the ImageNet val set:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt; &lt;/th&gt;
+      &lt;th&gt;A1 (600 epochs) &lt;br /&gt; top-1 accuracy&lt;/th&gt;
+      &lt;th&gt;A2 (300 epochs) &lt;br /&gt; top-1 accuracy&lt;/th&gt;
+      &lt;th&gt;Parameters&lt;/th&gt;
+      &lt;th&gt;Num. of Features&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ResNet50&lt;/td&gt;
+      &lt;td&gt;80.4&lt;/td&gt;
+      &lt;td&gt;79.8&lt;/td&gt;
+      &lt;td&gt;25.5 M&lt;/td&gt;
+      &lt;td&gt;64, 128, 256, 512&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Highway50&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;&lt;strong&gt;80.3&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;26.4 M&lt;/td&gt;
+      &lt;td&gt;48,  96, 192, 384&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ResNet101&lt;/td&gt;
+      &lt;td&gt;81.5&lt;/td&gt;
+      &lt;td&gt;81.3&lt;/td&gt;
+      &lt;td&gt;44.5 M&lt;/td&gt;
+      &lt;td&gt;64, 128, 256, 512&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Highway101&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;&lt;strong&gt;81.8&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;44.2 M&lt;/td&gt;
+      &lt;td&gt;48,  96, 180, 384&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ResNet152&lt;/td&gt;
+      &lt;td&gt;82.0&lt;/td&gt;
+      &lt;td&gt;81.8&lt;/td&gt;
+      &lt;td&gt;60.2 M&lt;/td&gt;
+      &lt;td&gt;64, 128, 256, 512&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Highway152&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;&lt;strong&gt;82.3&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;59.9 M&lt;/td&gt;
+      &lt;td&gt;48,  96, 180, 384&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Some observations:&lt;/p&gt;
+
+&lt;p&gt;HighwayNets consistently outperform ResNets with similar or slightly fewer number of parameters (but slightly more computation) &lt;em&gt;and produce shorter representations&lt;/em&gt; (approx. 70%).&lt;/p&gt;
+
+&lt;p&gt;Highway50 trained with the A2 training recipe (300 epochs) exceeds performance of ResNet50 with A2 — 80.3% vs 79.8%. It almost matches the performance of Resnet50 with the A1 recipe (600 epochs) — 80.3% vs 80.4%. Note that typical variation across seeds is 0.1%.&lt;/p&gt;
+
+&lt;p&gt;Highway101 trained with A2 (300 epochs) exceeds performance of ResNet50 with A2 (300 epochs) — 81.8% vs 81.3%. It even outperforms Resnet101 trained with A1 (600 epochs), and matches ResNet152 trained with A2 at 81.8% top-1 accuracy.&lt;/p&gt;
+
+&lt;p&gt;Highway152 trained with A2 (300 epochs) outperforms ResNet152 trained with A2 (300 epochs) as well as A1 (600 epochs).&lt;/p&gt;
+
+&lt;p&gt;Overall, it does not seem to be the case that having gated shortcuts hampers learning.
+The code used for these experiments is &lt;a href=&quot;https://github.com/flukeskywalker/highway-resnet-imagenet&quot;&gt;here&lt;/a&gt; for completeness, though I have not run it since I did the experiments in 2021.&lt;/p&gt;
+
+&lt;h2 id=&quot;notes--recommendations&quot;&gt;Notes &amp;amp; Recommendations&lt;/h2&gt;
+
+&lt;p&gt;A related note is that the switch to a &lt;em&gt;pre-activation&lt;/em&gt; design (proposed in this paper) was not needed for HighwayNets which did not have the &lt;em&gt;post-activation&lt;/em&gt; design introduced by ResNets.
+Original HighwayNets were already often as trainable as pre-activation ResNets.&lt;label for=&quot;sn-id-norm&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;sn-id-norm&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;Note that I’m referring to the location of the activation function, not that of the normalization layers. HighwayNets were developed towards end of 2014, mostly in parallel with BatchNorm, so they did not use normalization layers. Effectively combining normalization, bottleneck layers and skip connections was the key contribution of the ResNet paper. &lt;/span&gt;
+This is why HighwayNet in the second plot above does not need learning rate warmup which the original post-activation ResNet110 did.&lt;/p&gt;
+
+&lt;p&gt;Hopefully, I’ve convinced you that, at least with learnable gates, weighted skip connections do not hurt learning in general.
+Of course, successful network training depends on many many factors, so you may obtain different results in different situations.
+Nevertheless, I think there is enough evidence that you should experiment with weighted or gated skip connections for your problems, and see if they yield benefits in your situation.&lt;/p&gt;
+
+&lt;p&gt;When using gated skip connections, you should start by keeping the gates as “powerful” as the regular transformation. 
+To control number of parameters, remember that HighwayNets can produce similar or better results with a smaller representation due to the use of dynamic multiplicative interactions not present in ResNets.
+Due to this, it is obviously not optimal to tune everything for a ResNet, and then just try to convert it to a HighwayNet, but even this often works reasonably well.&lt;label for=&quot;note-lr&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-lr&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;Anecdotal example: for the HighwayNet110 above, a base learning rate of 0.2 instead of 0.1 turned out to perform even better in my experiments, compared to Resnet110. &lt;/span&gt;
+You should also try other variations, such as data-independent but learnable multiplicative connections, down-projections or weight-tying for efficient data-dependent gates, and of course the simplest residual skip connections.&lt;/p&gt;
+
+&lt;h2 id=&quot;appendix-a&quot;&gt;More Comparisons and Subtleties&lt;/h2&gt;
+
+&lt;p&gt;We saw above that the Identity Mappings paper introduced two “breaking” changes to HighwayNets: the transform gate only used a single layer of 1x1 convolutions, and a “post-activation” design meaning that the activation function was applied &lt;em&gt;after&lt;/em&gt; the addition shortcut.
+Let’s check what happens if we start with the “breaking” model from the paper and only roll-back one of these changes at a time, instead of both together.&lt;/p&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2025-01-11-skip/new_plot_more.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;Comparison of some coupled HighwayNet variants.&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;We have not re-tuned hyperparameters or initialization scales, so this will be just a quick test. 
+I think this is not a critical limitation in this particular case, so we learn a few things from this experiment and the resulting plot above.&lt;/p&gt;
+
+&lt;p&gt;If we switch to pre-activation but still use a single 1x1 conv to learn the gating (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;preact T=1x1&lt;/code&gt;), then the model trains very poorly.
+If we instead keep post-activation but switch to two 3x3 conv layers to learn the gating (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;postact T=2x(3x3) zeroBN&lt;/code&gt;), then the model both fits the data (training loss) and generalizes (test error) well.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;But&lt;/strong&gt; what is this &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;zeroBN&lt;/code&gt;? 
+Turns out &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;postact T=2x(3x3)&lt;/code&gt; becomes extremely unstable to train.
+One way to tackle this would be to change the initialization of the conv layers, but there’s a simpler fix.
+We can initialize the non-residual transformation to produces zeros by zero-ing out the weights of the last normalization layer in that path.
+This trick is commonly used by practitioners, particularly in computer vision, so it’s nothing new but completely solves the instability issues resulting in the plot above.
+Incidentally, it was also used by &lt;a href=&quot;https://arxiv.org/abs/2110.00476&quot;&gt;ResNet Strikes Back&lt;/a&gt;, which is why all the results in Evidence 3 above are with a post-activation design.&lt;/p&gt;
+
+&lt;p&gt;I really like this result because it is a nice reminder of the subtleties involved in architecture comparison: &lt;strong&gt;non-architecture choices strongly affect architecture comparisons&lt;/strong&gt;.
+This has long been one of the most important things to remember in deep learning research.&lt;/p&gt;
+
+&lt;h2 id=&quot;appendix-b&quot;&gt;Further Reducing Parameters&lt;/h2&gt;
+
+&lt;p&gt;The HighwayNet110 used for Evidence 1 above has 2.6M parameters, while ResNet110 has 1.7M.
+Does it perform better only because of this?
+No. In fact, the Identity Mappings paper explicitly notes that having more parameters does not help because the issue at hand is worse optimization due to depth.
+In their experiments, the &lt;em&gt;exclusive gating&lt;/em&gt; network does not train well despite having more parameters, so this is not about parameter count.&lt;/p&gt;
+
+&lt;p&gt;Nevertheless, beyond the subject of depth, parameter count or computational efficiency are important to consider. 
+On this, remember that “HighwayNets use twice as many parameters as ResNets” would be very naïve, because &lt;strong&gt;that’s not how architectures are compared&lt;/strong&gt;.&lt;label for=&quot;note-wish&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-wish&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;How I wish it was that easy … &lt;/span&gt;
+In the CIFAR-10 example above, even though I was doing the (suboptimal) thing by just taking a heavily tuned ResNet and just converting it to HighwayNet, I reduced the width of all blocks by a factor of 0.875.&lt;/p&gt;
+
+&lt;p&gt;Similarly, for the ImageNet experiments, I reduced the widths by a factor of around 0.75 or 0.7.
+This lead to nets that still took some more wall-time to train as I recall, but obtained much shorter representations, which might be very important for many applications!
+For a new problem, if you experiment with gated/weighted nets in general instead of tuning everything to ResNets, you can obtain a net that works well and is efficient for your needs.&lt;/p&gt;
+
+&lt;p&gt;As a very simple illustrative example, let’s look at the 2.6M HighwayNet110 on CIFAR-10 a bit.
+If we reduce the width multiplier factor below 0.875 to further reduce parameters, we seem to obtain a small degradation in results – why might that be?
+Well, the reason is that ResNet-110 was already skinny: 16, 32, 64 units in the three stacks of blocks, which reduces to 14, 28, 56 with a factor of 0.875.
+At some point the size of the representations we are working with is getting too small.
+What happens if we use 16, 24, 48 units, and add a convolution layer at the end to project back to 64 feature maps?
+&lt;strong&gt;We obtain HighwayNet111 that now has 1.97M parameters, but produces similar train loss and test accuracy as before&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h2&gt;
+
+&lt;p&gt;Thanks a lot to Lucas Beyer for very helpful comments and suggestions to improve this post!&lt;/p&gt;
+</description>
+			<pubDate>Sat, 11 Jan 2025 00:00:00 -0800</pubDate>
+			<link>https://rupeshks.cc/blog/skip.html</link>
+			<guid isPermaLink="true">https://rupeshks.cc/blog/skip.html</guid>
+			
+			<category>highway</category>
+			
+			<category>resnets</category>
+			
+			<category>skip</category>
+			
+			
+			<category>blog</category>
+			
 		  </item>
-		{% endunless %}
-    {% endfor %}
+		
+    
+		
+		  <item>
+			<title>Bayesian Flow Networks (A Twitter Overview)</title>
+			<description>&lt;p&gt;&lt;span style=&quot;color: gray&quot;&gt;by Alex Graves, Rupesh Kumar Srivastava, Timothy Atkinson and Faustino Gomez&lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;This post is a compilation of &lt;a href=&quot;https://twitter.com/rupspace/status/1691584987148218841?s=61&amp;amp;t=NoDMXm3EpQb10TiP3CyzHg&quot;&gt;a Twitter thread&lt;/a&gt; introducing our paper on &lt;a href=&quot;https://arxiv.org/abs/2308.07037&quot;&gt;Bayesian Flow Networks&lt;/a&gt;.
+It gives a very high-level summary of the system in the paper.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;We present a new perspective on the ideas related to diffusion models. BFNs combine Bayesian inference and neural nets to yield a model class with simple objectives that gracefully extends to discrete data.&lt;/p&gt;
+
+&lt;p&gt;We motivate BFNs from the perspective of compression (I’ll explain the figure below). The goal of learning is to minimize the cost of communicating the data, formally equivalent to fitting a probabilistic model with max. likelihood since the coding cost equals \(-\log(p_{model}(\text{data}))\).&lt;/p&gt;
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2023-08-16-bfn/bayesian_flow_overview.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;Warmup: Autoregressive models. Say Alice wants to transmit \(\mathbf{x}\) to Bob, \(\mathbf{x}\) has \(D\) variables or “tokens”, and both have access to the model. Alice sends token number \(d\) at step \(d\) encoded using the conditional model distribution at that step. The avg cost is the cross entropy in bits.&lt;/p&gt;
+
+&lt;p&gt;For training the model, we add up the costs at all \(D\) steps and minimize it. But what if instead of sending one token at a time, Alice sends a little information about &lt;em&gt;all&lt;/em&gt; the \(D\) tokens at each step? Then Bob can decode all tokens in parallel, leading us to diffusion and BFNs.&lt;/p&gt;
+
+&lt;p&gt;Say Alice and Bob agreed on a noise distribution schedule: Alice will send a sample from \(\mathbf{x} + \text{noise}(t)\) at time \(t\). This “sender distribution” formalizes “a little information”. But which distribution to encode this sample with since Bob doesn’t know \(\mathbf{x}\)?&lt;/p&gt;
+
+&lt;p&gt;We need a “receiver distribution” that both Alice and Bob have access to, similar to autoregressive case, to encode/decode the noisy samples. Clearly, if Bob can guess \(\mathbf{x}\), guessing \(\mathbf{x} + \text{noise}(t)\) will follow, since \(\text{noise}(t)\) is known. Let’s focus on parameterizing that guess first.&lt;/p&gt;
+
+&lt;p&gt;Assume a simple factorized form for guessing \(\mathbf{x}\), e.g. a product of \(D\) normal distributions for continuous data, whose parameters \(\boldsymbol{\theta}\) (mean and variance) are initially unknown to Bob, so he starts with a prior (the standard normal).&lt;/p&gt;
+
+\[p_{_I}(\mathbf{x} \mid \boldsymbol{\theta}) = \prod_{d=1}^D p_{_I}(x^{(d)} \mid \theta^{(d)})\]
+
+&lt;p&gt;We call the first guess above the “input distribution” \(p_{_I}\), because \(\mathbf{\theta}\) will be the inputs of our network. The output of the network \(\boldsymbol{\psi}\) will parameterize a similar, “output distribution” \(p_{_O}\). Both \(p_{_I}\) and \(p_{_O}\) will be updated at every step of the communication of noisy samples.&lt;/p&gt;
+
+\[p_{_O}(\mathbf{x} \mid \boldsymbol{\psi}) = \prod_{d=1}^D p_{_O}(x^{(d)} \mid \psi^{(d)})\]
+
+&lt;p&gt;The Bayesian part is this: given previous \(\boldsymbol{\theta}\) and a noisy sample with known noise, we can compute new parameters \(\boldsymbol{\theta}&apos;\) for certain distributions easily using Bayes’ theorem. This works because we are operating on independent distributions for each variable, so calculations are simple!&lt;/p&gt;
+
+&lt;p&gt;Putting it together:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Create sender dist (Fig: A)&lt;/li&gt;
+  &lt;li&gt;Use input parameters \(\boldsymbol{\theta}\) to compute \(p_{_O}\) using the network (Fig: B)&lt;/li&gt;
+  &lt;li&gt;Use \(p_{_O}\) to construct a receiver dist and communicate a sample from the sender dist (Fig: C)&lt;/li&gt;
+  &lt;li&gt;Use Bayesian update to compute \(\boldsymbol{\theta}\) for the next step (Fig: D)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2023-08-16-bfn/bayesian_flow_overview_annot.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;Both \(p_{_I}\) and \(p_{_O}\) get updated over time. Bayesian inference precisely updates beliefs about independent variables, and the network models the relationships between the variables. In the continuous time limit, the Bayesian updates become a &lt;em&gt;Bayesian Flow&lt;/em&gt; of information from \(\mathbf{x}\) to \(\boldsymbol{\theta}\).&lt;/p&gt;
+
+&lt;p&gt;The total communication cost is the sum of costs at each step, which is simply the KL divergence between the sender and receiver distributions (plus a small residual cost at the end). We minimize this to train the network.&lt;/p&gt;
+
+&lt;p&gt;Note that unlike diffusion models
+1) there is no need to define a forward process
+2) the noisy sender distributions are independent so deriving the loss in closed form is simple
+3) the net maps from distribution to distribution, not data to distribution.&lt;/p&gt;
+
+&lt;p&gt;All this makes it possible for us to easily adapt the BFN framework to continuous, discretized and discrete data in the paper by choosing appropriate distributions. We get very good results on modeling MNIST, CIFAR-10 and text8. &lt;a href=&quot;https://arxiv.org/abs/2308.07037&quot;&gt;Check it out&lt;/a&gt;!&lt;/p&gt;
+
+</description>
+			<pubDate>Wed, 16 Aug 2023 00:00:00 -0700</pubDate>
+			<link>https://rupeshks.cc/projects/bfn.html</link>
+			<guid isPermaLink="true">https://rupeshks.cc/projects/bfn.html</guid>
+			
+			<category>compression</category>
+			
+			<category>bayes</category>
+			
+			
+			<category>projects</category>
+			
+		  </item>
+		
+    
+		
+		  <item>
+			<title>ClipUp: A Simple and Powerful Optimizer for Distribution-based Policy Evolution</title>
+			<description>&lt;p&gt;&lt;span style=&quot;color: gray&quot;&gt;by Nihat Engin Toklu, Paweł Liskowski and Rupesh Kumar Srivastava&lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;ClipUp is a simple adaptive optimizer that makes it easier to solve certain optimization problems in practice.
+&lt;!--more--&gt;
+&lt;label for=&quot;img-humanoid&quot; class=&quot;margin-toggle&quot;&gt;⊕&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;img-humanoid&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;marginnote&quot;&gt;&lt;img class=&quot;fullwidth&quot; src=&quot;https://rupeshks.cc/assets/img/2020-12-08-clipup/pgpelib_HumanoidBulletEnv.gif&quot; /&gt;&lt;br /&gt;A neural network trained to control the PyBullet Humanoid using PGPE for gradient estimation and ClipUp for optimization.&lt;/span&gt;
+It is generally applicable, but is designed to be specially useful for distribution-based policy search algorithms such as PGPE &lt;a class=&quot;citation&quot; href=&quot;#sehnke2010&quot;&gt;[1]&lt;/a&gt;, ARS &lt;a class=&quot;citation&quot; href=&quot;#mania2018&quot;&gt;[2]&lt;/a&gt; and OpenAI-ES &lt;a class=&quot;citation&quot; href=&quot;#salimans2017&quot;&gt;[3]&lt;/a&gt; by helping in finding good hyperparameters quickly and intuitively.
+The technique is simple: use &lt;em&gt;normalized&lt;/em&gt; gradient descent with momentum, and clip the parameter &lt;em&gt;updates&lt;/em&gt; (not gradients!).&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://arxiv.org/abs/2008.02387&quot;&gt;Read the full report on arXiv&lt;/a&gt;, extending our PPSN 2020 paper.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/nnaisense/pgpelib&quot;&gt;Get our code on GitHub&lt;/a&gt;, which provides a clean and scalable implementation of PGPE and makes experimenting with this family of algorithms easy.&lt;/p&gt;
+
+&lt;h2 id=&quot;algorithm&quot;&gt;Algorithm&lt;/h2&gt;
+
+&lt;p&gt;&lt;label for=&quot;note-algo&quot; class=&quot;margin-toggle&quot;&gt; ⊕&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-algo&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;marginnote&quot;&gt;Notice that by setting the hyperparameters appropriately, we recover &lt;strong&gt;normalized gradient descent&lt;/strong&gt;. The hyperparameters help us control the algorithm behavior in non-idealized conditions. &lt;/span&gt;
+To get straight to the point, the algorithm is given below.
+Using the metaphors of “heavy-ball” momentum, it computes a new velocity of a ball from the current velocity and gradients, that is then added to the current position to obtain the next position.&lt;/p&gt;
+
+&lt;p&gt;&lt;label for=&quot;note-notation&quot; class=&quot;margin-toggle&quot;&gt; ⊕&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-notation&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;marginnote&quot;&gt;Bold symbols denote vectors. &lt;/span&gt;
+\(\textbf{Initialization: } \text{Velocity } \boldsymbol{v_0} = \boldsymbol{0}\) &lt;br /&gt;
+\(\textbf{Hyperparameters: }\) &lt;br /&gt;
+\(\text{Step size } \alpha, \text{Maximum speed } v^{\text{max}}, \text{Momentum } m\) &lt;br /&gt;
+\(\textbf{Input: } \text{Estimated gradient } \nabla f(\boldsymbol{x}_k)\)
+&lt;br /&gt;&lt;/p&gt;
+
+&lt;p&gt;\(\text{// }\textit{Velocity update with normalized gradient}\) &lt;br /&gt;
+\(\boldsymbol{v&apos;}_{k+1} \gets m \cdot \boldsymbol{v}_k + \alpha \cdot \big( \nabla f(\boldsymbol{x}_k) \,/\, ||\nabla f(\boldsymbol{x}_k)|| \big)\) &lt;br /&gt;
+\(\text{// }\textit{Clip velocity based on norm}\) &lt;br /&gt;
+\(\text{if } ||\boldsymbol{v&apos;}_{k+1}|| &amp;gt; v^{\text{max}}\) &lt;br /&gt;
+\(\quad\) \(\boldsymbol{v}_{k+1} \gets v^{\text{max}} \cdot \big( \boldsymbol{v&apos;}_{k+1} \,/\, ||\boldsymbol{v&apos;}_{k+1}|| \big)\) &lt;br /&gt;
+\(\text{else }\) &lt;br /&gt;
+\(\quad\) \(\boldsymbol{v}_{k+1} \gets \boldsymbol{v&apos;}_{k+1}\) &lt;br /&gt;
+\(\textbf{Return: }\boldsymbol{v}_{k+1}\)&lt;/p&gt;
+
+&lt;p&gt;ClipUp comes with a strategy for setting and tuning hyperparameters for control problems.
+Start by setting \(m=0.9\) and \(\alpha=v^{\text{max}}/2\),&lt;label for=&quot;note-alpha&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-alpha&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;\(\alpha\) serves as the &lt;em&gt;initial speed&lt;/em&gt; at the first iteration and the rate at which velocity changes after that. &lt;/span&gt; which leaves \(v^{\text{max}}\) as the main hyperparameter to tune.
+Next, use \(v^{\text{max}}\) to determine a key hyperparameter of PGPE: \(\boldsymbol{\sigma}\), the initial standard deviation of Gaussian noise used for estimating the gradient.
+\(||\boldsymbol{\sigma}||\) and \(v^{\text{max}}\) have the same “type”&lt;label for=&quot;note-types&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-types&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;They are Euclidean distances in parameter space. &lt;/span&gt; so we recommend tuning their ratio instead.
+Based on experiments with several environments, we have found that ratios between 10 to 20 work well as a starting point.
+If computational resources are limited, tune only \(v^{\text{max}}\), otherwise tune the multipliers above for improvements in performance.&lt;label for=&quot;note-hypers&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-hypers&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;We recommend tuning the \(||\boldsymbol{\sigma}||/v^{\text{max}}\) ratio, the \(\alpha\) multiplier and \(m\), in order. &lt;/span&gt;
+See Section 4 of our paper to understand how these hyperparameters can be interpreted and how their values are related to each other.&lt;/p&gt;
+
+&lt;h2 id=&quot;why-clipup&quot;&gt;Why ClipUp?&lt;/h2&gt;
+
+&lt;p&gt;During our experiments with continuous control tasks, we noticed that adjusting hyperparameters often felt like tweaking knobs whose impact on algorithm behavior we couldn’t easily predict.&lt;label for=&quot;note-sim&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;note-sim&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;Experiments in our paper use representative tasks based on the MuJoCo and PyBullet physics simulators, but this is a general issue we have faced during practical applications of RL algorithms. &lt;/span&gt;
+When tackling high-dimensional non-convex optimization problems, it is not sufficient to know that an optimizer has good theoretical properties with some ideal hyperparameter settings, since this does not take into account the typical workflow a practitioner might have when solving a problem. 
+This workflow usually consists of starting with default hyperparameter settings of the optimizer, and then attempting to adjust both these values and the remaining hyperparameters of the method to improve results.
+Many practitioners do not have access to, or can not allocate a large amount of computational resources to perform a large automated hyperparameter search.&lt;/p&gt;
+
+&lt;h3 id=&quot;some-desirable-properties-of-optimizers&quot;&gt;Some Desirable Properties of Optimizers&lt;/h3&gt;
+
+&lt;p&gt;From the perspective of &lt;strong&gt;optimizers as components of a problem solving strategy&lt;/strong&gt;, we consider some questions that a practitioner might ask before deciding to use an optimizer.&lt;/p&gt;
+
+&lt;p&gt;&lt;span class=&quot;newthought&quot;&gt;Q1:&lt;/span&gt;  Are there &lt;strong&gt;reasonably good default settings&lt;/strong&gt; for the hyperparameters, that often provide a good starting point for my problem class?&lt;/p&gt;
+
+&lt;p&gt;&lt;span class=&quot;newthought&quot;&gt;Q2:&lt;/span&gt;  Can I intuitively &lt;strong&gt;interpret the effects of adjusting hyperparameters&lt;/strong&gt; on the optimizer behavior?&lt;/p&gt;
+
+&lt;p&gt;&lt;span class=&quot;newthought&quot;&gt;Q3:&lt;/span&gt;  Are there &lt;strong&gt;interpretable relationships between hyperparameters&lt;/strong&gt;, that help me understand how some hyperparamters should be set in comparison to others?&lt;/p&gt;
+
+&lt;p&gt;&lt;span class=&quot;newthought&quot;&gt;Q4:&lt;/span&gt;  Does the optimizer have robustness to &lt;strong&gt;variations in problem definition&lt;/strong&gt;, such as different reward functions that I might experiment with for a given task?&lt;/p&gt;
+
+&lt;p&gt;We have found that for ClipUp, the answer to these questions is &lt;em&gt;yes&lt;/em&gt;, more so than other common optimizers.
+As a result we can often quickly configure it to learn successful policies.
+In particular, it is a great fit for distribution-based search because its hyperparameters can be intuitively interpreted in context of the sampling-based policy gradient estimation algorithm.&lt;label for=&quot;sn-pgpe&quot; class=&quot;margin-toggle sidenote-number&quot;&gt;&lt;/label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;sn-pgpe&quot; class=&quot;margin-toggle&quot; /&gt;&lt;span class=&quot;sidenote&quot;&gt;We used PGPE, but the arguments apply to any Evolutionary or Randomized Search strategy based on related principles. &lt;/span&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;summary-of-results&quot;&gt;Summary of Results&lt;/h2&gt;
+
+&lt;p&gt;Our paper explains how these useful properties of ClipUp arise and presents several results on a range of simulated continuous control benchmarks, including the challenging PyBullet Humanoid.
+The highlights are summarized by the following plots, all using 30 runs aggregated for comparison:&lt;/p&gt;
+
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2020-12-08-clipup/clipupvsadamhumanoid.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;ClipUp &lt;strong&gt;matches or exceeds the performance of Adam&lt;/strong&gt; under moderate amount of hyperparameter tuning that one might use in practice.&lt;/figcaption&gt;&lt;/figure&gt;
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2020-12-08-clipup/humanoidLittlepopClipVsNoclip.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;The clipping operator of ClipUp leads to more &lt;strong&gt;stable training when using low population sizes&lt;/strong&gt; (here 1/8th of the original).&lt;/figcaption&gt;&lt;/figure&gt;
+&lt;figure&gt;&lt;img src=&quot;https://rupeshks.cc/assets/img/2020-12-08-clipup/humanoidMoreLrClipVsNoClip.png&quot; /&gt;&lt;figcaption class=&quot;maincolumn-figure&quot;&gt;Clipping the updates allows one to enjoy &lt;strong&gt;faster training using higher learning rates&lt;/strong&gt; while keeping the momentum in check.&lt;/figcaption&gt;&lt;/figure&gt;
+
+&lt;p&gt;For further results and analysis, read &lt;a href=&quot;https://arxiv.org/abs/2008.02387&quot;&gt;our paper&lt;/a&gt;!&lt;/p&gt;
+
+&lt;h3 id=&quot;references&quot;&gt;References&lt;/h3&gt;
+
+&lt;ol class=&quot;bibliography&quot;&gt;&lt;li&gt;&lt;span id=&quot;sehnke2010&quot;&gt;1. Sehnke, Frank, Christian Osendorfer, Thomas Rückstieß, Alex Graves, Jan Peters, and Jürgen Schmidhuber. 2010. Parameter-exploring policy gradients. &lt;i&gt;Neural Networks&lt;/i&gt; 23. Elsevier: 551–559.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;mania2018&quot;&gt;2. Mania, Horia, Aurelia Guy, and Benjamin Recht. 2018. Simple random search of static linear policies is competitive for reinforcement learning. In &lt;i&gt;Advances in Neural Information Processing Systems&lt;/i&gt;, 1800–1809.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;salimans2017&quot;&gt;3. Salimans, Tim, Jonathan Ho, Xi Chen, Szymon Sidor, and Ilya Sutskever. 2017. Evolution strategies as a scalable alternative to reinforcement learning. &lt;i&gt;arXiv preprint arXiv:1703.03864&lt;/i&gt;.&lt;/span&gt;&lt;/li&gt;&lt;/ol&gt;
+</description>
+			<pubDate>Tue, 08 Dec 2020 00:00:00 -0800</pubDate>
+			<link>https://rupeshks.cc/projects/clipup.html</link>
+			<guid isPermaLink="true">https://rupeshks.cc/projects/clipup.html</guid>
+			
+			<category>projects</category>
+			
+			<category>evolution</category>
+			
+			
+			<category>projects</category>
+			
+		  </item>
+		
+    
   </channel>
 </rss>

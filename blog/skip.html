@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>
+    
+      
+          Weighted Skip Connections are Not Harmful for Deep Nets
+      
+    
+  </title>
+
+  
+    <meta property="og:image" content="https://rupeshks.cc/assets/img/2025-01-11-skip/new_plot.png" />
+    <meta property="twitter:image" content="https://rupeshks.cc/assets/img/2025-01-11-skip/new_plot.png" />
+	
+
+  <meta name="description" content="Give Gates a Chance">
+
+  <!-- Google Fonts loaded here depending on setting in _data/options.yml true loads font, blank does not-->
+  
+    <link href='//fonts.googleapis.com/css?family=Lato:400,400italic' rel='stylesheet' type='text/css'>
+  
+  
+  <!-- Load up MathJax script if needed ... specify in /_data/options.yml file-->
+  
+    <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: [
+      "MathMenu.js",
+      "MathZoom.js",
+      "AssistiveMML.js",
+      "a11y/accessibility-menu.js"
+    ],
+    jax: ["input/TeX", "output/CommonHTML"],
+    TeX: {
+      extensions: [
+        "AMSmath.js",
+        "AMSsymbols.js",
+        "noErrors.js",
+        "noUndefined.js",
+      ]
+    }
+  });
+</script>
+
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+ <!--   <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
+  
+
+  <link rel="stylesheet" type="text/css" href="https://rupeshks.cc/css/tufte.css">
+  <!-- <link rel="stylesheet" type="text/css" href="https://rupeshks.cc/css/print.css" media="print"> -->
+
+  <link rel="canonical" href="https://rupeshks.cc/blog/skip.html">
+
+  <link rel="alternate" type="application/rss+xml" title="Rupesh Kumar Srivastava" href="https://rupeshks.cc/feed.xml" />
+</head>
+
+  <body>
+    <!--- Header and nav template site-wide -->
+<header>
+	<nav class="group">
+	  <a href="https://rupeshks.cc/"><img class="badge" src="https://rupeshks.cc/assets/img/badge_rk.png" alt="CH"></a>
+	  
+		  
+		    
+		      <a href="https://rupeshks.cc/blog/">Blog</a>
+		    
+	    
+  	
+		  
+  	
+		  
+		    
+		      <a href="https://rupeshks.cc/">About</a>
+		    
+	    
+  	
+		  
+		    
+		      <a href="https://rupeshks.cc/css/print.css"></a>
+		    
+	    
+  	
+		  
+  	
+	</nav>
+</header>
+    <article class="group">
+      <h1>Weighted Skip Connections are Not Harmful for Deep Nets</h1>
+<p class="subtitle">January 11, 2025</p>
+
+<p>The paper <a href="https://arxiv.org/abs/1603.05027">Identity Mappings in Deep Residual Networks</a> has design mistakes leading to incorrect conclusions about training deep networks with gated skip connections.
+You should try gated/weighted skip connections yourself and see if they improve results on your problems.</p>
+
+<!--more-->
+
+<p>Before continuing, this should go without saying but in any case: This post is purely in the spirit of scientific discussion. I have deep respect for the authors’ many contributions to the field.</p>
+
+<p><label for="note-credit" class="margin-toggle"> ⊕</label><input type="checkbox" id="note-credit" class="margin-toggle" /><span class="marginnote">Side-note: I fully agree with Lucas’ side-take that OpenAI papers have been consistently the best at giving proper credit to past work among the big labs. I’ve often mentioned this in private but more people should acknowledge this publicly. </span>
+A recent <a href="https://lucasb.eyer.be/snips/residuals.html">blog post</a> by Lucas Beyer points readers to the paper <a href="https://arxiv.org/abs/1603.05027">Identity Mappings in Deep Residual Networks</a> as playing a key role in the history of development of skip connections.
+Unfortunately, (partially) due to the mistakes made in this paper in comparing to <a href="https://arxiv.org/abs/1507.06228">Highway Networks</a>, some researchers believe that ResNets are the only viable and scalable variant of HighwayNets, which were published earlier.
+<label for="note-jump" class="margin-toggle"> ⊕</label><input type="checkbox" id="note-jump" class="margin-toggle" /><span class="marginnote"><a href="#the-mistakes">Quick jump to the mistakes.</a> </span>
+Below are <strong>three</strong> experimental results as evidence that this is false.</p>
+
+<h2 id="background">Background</h2>
+
+<p>To begin, here’s the conclusion of the paper regarding messing with the shortcut or skip connections in its own words:</p>
+
+<blockquote>
+  <p>Multiplicative manipulations (scaling, gating, 1×1 convolutions, and dropout) on the shortcuts can hamper
+information propagation and lead to optimization problems.</p>
+</blockquote>
+
+<blockquote>
+  <p>… the degradation of these models is caused by optimization issues, instead of representational abilities.</p>
+</blockquote>
+
+<p>This conclusion is supported by the following key figure from the paper:</p>
+
+<figure><img src="https://rupeshks.cc/assets/img/2025-01-11-skip/curves_shortcuts.png" /><figcaption class="maincolumn-figure">Figure 3 from <em>Identity Mappings in Deep Residual Networks</em>.</figcaption></figure>
+
+<p>Focus on the top-right plot which compares Resnets to <em>exclusive gating</em> networks, which is the paper’s name for the design used by <a href="https://arxiv.org/abs/1507.06228">Highway Networks</a>, the predecessor to Resnets.<label for="note-highway" class="margin-toggle sidenote-number"></label><input type="checkbox" id="note-highway" class="margin-toggle" /><span class="sidenote">Quick summary: HighwayNets said “instead of the typical \(y=H(x)\) for a neural net layer, do \(y = H(x)T(x) + xC(x)\), where T and C are learnable gates. The variant of this used in experiments was \(H(x)T(x) + x(1 - T(x))\). ResNets said “do \(y=H(x) + x\)”. </span>
+Clearly, the Resnet design leads to improved optimization (lower training loss) and hence a better final result on the test set (lower error rate), despite the fact that the gated network has more parameters (hence more computation) at its disposal.
+This, taken together with the other plots, does indeed support the conclusion regarding multiplicative manipulations on the shortcuts: they impede optimization and should be avoided!</p>
+
+<h2 id="the-mistakes">The Mistakes</h2>
+
+<figure><img src="https://rupeshks.cc/assets/img/2025-01-11-skip/shortcuts.png" /><figcaption class="maincolumn-figure">Annotated subfigure 2(c) from the paper, with newly introduced elements (excessively) highlighted in red.</figcaption></figure>
+<p>When comparing a proposed method to a previous method, one needs to implement the previous method correctly.
+This is where the mistakes happened, as highlighted in the figure above.
+If you read the Highway Networks papers, then this paper, you should ask: a) why are 1x1 convolutions used for the gates when the HighwayNets paper used the same function classes for \(H\) and \(T\)? b) why is an extra ReLU used after the addition which is absent in the HighwayNets papers?
+And finally, what happens if we remove these newly introduced elements?
+We arrive at the following design that follows the HighwayNets papers:</p>
+
+<figure><img src="https://rupeshks.cc/assets/img/2025-01-11-skip/coupled_highway_original.png" /><figcaption class="maincolumn-figure">Original Highway Network design, which removes the newly introduced elements highlighted above.</figcaption></figure>
+
+<h2 id="evidence-1">Evidence 1</h2>
+
+<p>Below is a new version of the top-right plot, this time following the design from the HighwayNets papers. 
+We take the ResNet-v1, remove the final ReLU, and instead of 1x1 gates use the same receptive field and number of units as the non-identity path. The number of units in Highway layers is slightly reduced.<label for="note-params" class="margin-toggle sidenote-number"></label><input type="checkbox" id="note-params" class="margin-toggle" /><span class="sidenote">The fact that the HighwayNet actually outperforms the ResNet can be explained by the fact that despite reducing the width by a factor of 0.875, it has more parameters. See <a href="#appendix-b">notes &amp; recommentations</a> for a short discussion about this. </span></p>
+
+<figure><img src="https://rupeshks.cc/assets/img/2025-01-11-skip/new_plot.png" /><figcaption class="maincolumn-figure">Comparing Resnet to correctly implemented Highway Nets. The training setup is similar to that in the Identity Mappings paper, with slight variations such as training for 200 epochs instead of 64k batches, from the codebase <a href="https://github.com/akamaster/pytorch_resnet_cifar10">here</a>.</figcaption></figure>
+
+<p>Clearly the optimization difficulties have disappeared, and gating does not seem to hamper the ability of the network to learn with over 100 layers.
+This directly contradicts the conclusion of the Identity Mappings paper that any manipulation of the shortcuts hurts information propagation.
+The design introduced by the paper to represent HighwayNets lead to poor training because the gates did not have enough information to learn when input signals should be transformed vs copied over.</p>
+
+<p>If you’d like to reproduce these training curves, <a href="https://github.com/flukeskywalker/highway-resnet-comparison">the code and logs are here</a>.
+See <a href="#appendix-a">more comparisons</a> to see what happens if we remove the two changes one-by-one instead of together.</p>
+
+<h2 id="evidence-2">Evidence 2</h2>
+
+<p>This is just a pointer to already published results.
+In a follow-up paper on arXiv in 2016 (published in ICLR 2017), we discussed the same issue and showed the lack of optimization difficulties for 50-layer HighwayNets on ImageNet: see <a href="https://arxiv.org/pdf/1612.07771#page=8.36">Section 5 [pdf link]</a> of <a href="https://arxiv.org/abs/1612.07771">Highway and Residual Networks learn Unrolled Iterative Estimation</a>.
+Unfortunately this paper is not very well known outside the small set of people interested in the iterative estimation view, so you are probably unfamiliar with it.
+In addition to these experiments, I think it has some cool ideas about the working of these deep networks, so check it out!</p>
+
+<h2 id="evidence-3">Evidence 3</h2>
+
+<p>When the excellent <a href="https://arxiv.org/abs/2110.00476">ResNet strikes back</a> paper came out, I did similar experiments by directly converting ResNets to HighwayNets (with reduced widths) and running the improved training recipe <em>A2</em> from the paper.
+The goal was to check if HighwayNets only work well for around 50 layers on ImageNet etc, and perhaps deeper nets on larger datasets require simple residual connections.
+Here are the results on the ImageNet val set:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>A1 (600 epochs) <br /> top-1 accuracy</th>
+      <th>A2 (300 epochs) <br /> top-1 accuracy</th>
+      <th>Parameters</th>
+      <th>Num. of Features</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ResNet50</td>
+      <td>80.4</td>
+      <td>79.8</td>
+      <td>25.5 M</td>
+      <td>64, 128, 256, 512</td>
+    </tr>
+    <tr>
+      <td>Highway50</td>
+      <td> </td>
+      <td><strong>80.3</strong></td>
+      <td>26.4 M</td>
+      <td>48,  96, 192, 384</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>ResNet101</td>
+      <td>81.5</td>
+      <td>81.3</td>
+      <td>44.5 M</td>
+      <td>64, 128, 256, 512</td>
+    </tr>
+    <tr>
+      <td>Highway101</td>
+      <td> </td>
+      <td><strong>81.8</strong></td>
+      <td>44.2 M</td>
+      <td>48,  96, 180, 384</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>ResNet152</td>
+      <td>82.0</td>
+      <td>81.8</td>
+      <td>60.2 M</td>
+      <td>64, 128, 256, 512</td>
+    </tr>
+    <tr>
+      <td>Highway152</td>
+      <td> </td>
+      <td><strong>82.3</strong></td>
+      <td>59.9 M</td>
+      <td>48,  96, 180, 384</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Some observations:</p>
+
+<p>HighwayNets consistently outperform ResNets with similar or slightly fewer number of parameters (but slightly more computation) <em>and produce shorter representations</em> (approx. 70%).</p>
+
+<p>Highway50 trained with the A2 training recipe (300 epochs) exceeds performance of ResNet50 with A2 — 80.3% vs 79.8%. It almost matches the performance of Resnet50 with the A1 recipe (600 epochs) — 80.3% vs 80.4%. Note that typical variation across seeds is 0.1%.</p>
+
+<p>Highway101 trained with A2 (300 epochs) exceeds performance of ResNet50 with A2 (300 epochs) — 81.8% vs 81.3%. It even outperforms Resnet101 trained with A1 (600 epochs), and matches ResNet152 trained with A2 at 81.8% top-1 accuracy.</p>
+
+<p>Highway152 trained with A2 (300 epochs) outperforms ResNet152 trained with A2 (300 epochs) as well as A1 (600 epochs).</p>
+
+<p>Overall, it does not seem to be the case that having gated shortcuts hampers learning.
+The code used for these experiments is <a href="https://github.com/flukeskywalker/highway-resnet-imagenet">here</a> for completeness, though I have not run it since I did the experiments in 2021.</p>
+
+<h2 id="notes--recommendations">Notes &amp; Recommendations</h2>
+
+<p>A related note is that the switch to a <em>pre-activation</em> design (proposed in this paper) was not needed for HighwayNets which did not have the <em>post-activation</em> design introduced by ResNets.
+Original HighwayNets were already often as trainable as pre-activation ResNets.<label for="sn-id-norm" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-id-norm" class="margin-toggle" /><span class="sidenote">Note that I’m referring to the location of the activation function, not that of the normalization layers. HighwayNets were developed towards end of 2014, mostly in parallel with BatchNorm, so they did not use normalization layers. Effectively combining normalization, bottleneck layers and skip connections was the key contribution of the ResNet paper. </span>
+This is why HighwayNet in the second plot above does not need learning rate warmup which the original post-activation ResNet110 did.</p>
+
+<p>Hopefully, I’ve convinced you that, at least with learnable gates, weighted skip connections do not hurt learning in general.
+Of course, successful network training depends on many many factors, so you may obtain different results in different situations.
+Nevertheless, I think there is enough evidence that you should experiment with weighted or gated skip connections for your problems, and see if they yield benefits in your situation.</p>
+
+<p>When using gated skip connections, you should start by keeping the gates as “powerful” as the regular transformation. 
+To control number of parameters, remember that HighwayNets can produce similar or better results with a smaller representation due to the use of dynamic multiplicative interactions not present in ResNets.
+Due to this, it is obviously not optimal to tune everything for a ResNet, and then just try to convert it to a HighwayNet, but even this often works reasonably well.<label for="note-lr" class="margin-toggle sidenote-number"></label><input type="checkbox" id="note-lr" class="margin-toggle" /><span class="sidenote">Anecdotal example: for the HighwayNet110 above, a base learning rate of 0.2 instead of 0.1 turned out to perform even better in my experiments, compared to Resnet110. </span>
+You should also try other variations, such as data-independent but learnable multiplicative connections, down-projections or weight-tying for efficient data-dependent gates, and of course the simplest residual skip connections.</p>
+
+<h2 id="appendix-a">More Comparisons and Subtleties</h2>
+
+<p>We saw above that the Identity Mappings paper introduced two “breaking” changes to HighwayNets: the transform gate only used a single layer of 1x1 convolutions, and a “post-activation” design meaning that the activation function was applied <em>after</em> the addition shortcut.
+Let’s check what happens if we start with the “breaking” model from the paper and only roll-back one of these changes at a time, instead of both together.</p>
+
+<figure><img src="https://rupeshks.cc/assets/img/2025-01-11-skip/new_plot_more.png" /><figcaption class="maincolumn-figure">Comparison of some coupled HighwayNet variants.</figcaption></figure>
+
+<p>We have not re-tuned hyperparameters or initialization scales, so this will be just a quick test. 
+I think this is not a critical limitation in this particular case, so we learn a few things from this experiment and the resulting plot above.</p>
+
+<p>If we switch to pre-activation but still use a single 1x1 conv to learn the gating (<code class="language-plaintext highlighter-rouge">preact T=1x1</code>), then the model trains very poorly.
+If we instead keep post-activation but switch to two 3x3 conv layers to learn the gating (<code class="language-plaintext highlighter-rouge">postact T=2x(3x3) zeroBN</code>), then the model both fits the data (training loss) and generalizes (test error) well.</p>
+
+<p><strong>But</strong> what is this <code class="language-plaintext highlighter-rouge">zeroBN</code>? 
+Turns out <code class="language-plaintext highlighter-rouge">postact T=2x(3x3)</code> becomes extremely unstable to train.
+One way to tackle this would be to change the initialization of the conv layers, but there’s a simpler fix.
+We can initialize the non-residual transformation to produces zeros by zero-ing out the weights of the last normalization layer in that path.
+This trick is commonly used by practitioners, particularly in computer vision, so it’s nothing new but completely solves the instability issues resulting in the plot above.
+Incidentally, it was also used by <a href="https://arxiv.org/abs/2110.00476">ResNet Strikes Back</a>, which is why all the results in Evidence 3 above are with a post-activation design.</p>
+
+<p>I really like this result because it is a nice reminder of the subtleties involved in architecture comparison: <strong>non-architecture choices strongly affect architecture comparisons</strong>.
+This has long been one of the most important things to remember in deep learning research.</p>
+
+<h2 id="appendix-b">Further Reducing Parameters</h2>
+
+<p>The HighwayNet110 used for Evidence 1 above has 2.6M parameters, while ResNet110 has 1.7M.
+Does it perform better only because of this?
+No. In fact, the Identity Mappings paper explicitly notes that having more parameters does not help because the issue at hand is worse optimization due to depth.
+In their experiments, the <em>exclusive gating</em> network does not train well despite having more parameters, so this is not about parameter count.</p>
+
+<p>Nevertheless, beyond the subject of depth, parameter count or computational efficiency are important to consider. 
+On this, remember that “HighwayNets use twice as many parameters as ResNets” would be very naïve, because <strong>that’s not how architectures are compared</strong>.<label for="note-wish" class="margin-toggle sidenote-number"></label><input type="checkbox" id="note-wish" class="margin-toggle" /><span class="sidenote">How I wish it was that easy … </span>
+In the CIFAR-10 example above, even though I was doing the (suboptimal) thing by just taking a heavily tuned ResNet and just converting it to HighwayNet, I reduced the width of all blocks by a factor of 0.875.</p>
+
+<p>Similarly, for the ImageNet experiments, I reduced the widths by a factor of around 0.75 or 0.7.
+This lead to nets that still took some more wall-time to train as I recall, but obtained much shorter representations, which might be very important for many applications!
+For a new problem, if you experiment with gated/weighted nets in general instead of tuning everything to ResNets, you can obtain a net that works well and is efficient for your needs.</p>
+
+<p>As a very simple illustrative example, let’s look at the 2.6M HighwayNet110 on CIFAR-10 a bit.
+If we reduce the width multiplier factor below 0.875 to further reduce parameters, we seem to obtain a small degradation in results – why might that be?
+Well, the reason is that ResNet-110 was already skinny: 16, 32, 64 units in the three stacks of blocks, which reduces to 14, 28, 56 with a factor of 0.875.
+At some point the size of the representations we are working with is getting too small.
+What happens if we use 16, 24, 48 units, and add a convolution layer at the end to project back to 64 feature maps?
+<strong>We obtain HighwayNet111 that now has 1.97M parameters, but produces similar train loss and test accuracy as before</strong>.</p>
+
+<h2 id="acknowledgement">Acknowledgement</h2>
+
+<p>Thanks a lot to Lucas Beyer for very helpful comments and suggestions to improve this post!</p>
+
+
+
+    </article>
+    <span class="print-footer">Weighted Skip Connections are Not Harmful for Deep Nets - January 11, 2025 - Rupesh Kumar Srivastava</span>
+    <footer>
+  <hr class="slender">
+  <ul class="footer-links">
+<!--    <li><a href="mailto:hate@spam.net"><span class="icon-mail3"></span></a></li>    -->
+    
+      <li>
+        <a href="//www.twitter.com/rupspace"><span class="icon-twitter"></span></a>
+      </li>
+    
+      <li>
+        <a href="//github.com/flukeskywalker"><span class="icon-github"></span></a>
+      </li>
+    
+      <li>
+        <a href="//www.linkedin.com/in/rupesh-srivastava-7a2441175/"><span class="icon-linkedin"></span></a>
+      </li>
+      
+  </ul>
+<div class="credits">
+<span>&copy; 2025 &nbsp;&nbsp;RUPESH KUMAR SRIVASTAVA</span></br> <br>
+    <span>Created with the <a href="//github.com/clayh53/tufte-jekyll">Tufte theme </a> for <a href="//jekyllrb.com">Jekyll</a> with help from <a href="https://github.com/Higgcz">Higgcz</a>.</span>
+</div>  
+</footer>
+    <!---->
+<!--&lt;!&ndash; Global site tag (gtag.js) - Google Analytics &ndash;&gt;-->
+<!--<script async-->
+<!--        src="https://www.googletagmanager.com/gtag/js?id=UA-43857392-3">-->
+<!--</script>-->
+<!--<script>-->
+<!--    window.dataLayer = window.dataLayer || [];-->
+<!--    function gtag(){dataLayer.push(arguments);}-->
+<!--    gtag('js', new Date());-->
+<!--    gtag('config', 'UA-43857392-3');-->
+<!--</script>-->
+  </body>
+</html>
