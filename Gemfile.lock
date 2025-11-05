@@ -102,7 +102,7 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
-    rexml (3.2.5)
+    rexml (3.4.4)
     rouge (3.26.0)
     safe_yaml (1.0.5)
     sassc (2.4.0)
@@ -134,6 +134,7 @@ DEPENDENCIES
   racc (~> 1.8)
   rake (~> 13.2)
   rdoc (~> 6.7)
+  rexml (>= 3.3.9)
   rouge
   webrick (>= 1.8.2)
 
