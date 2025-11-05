@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'jekyll', '~> 4.4'
-gem 'webrick'
+gem 'webrick', '>= 1.8.2'
 gem 'rouge'
 gem 'rake', '~> 13.2'
 gem 'csv', '~> 3.3'
