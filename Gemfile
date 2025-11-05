@@ -1,6 +1,15 @@
 source 'https://rubygems.org'
 
-gem 'jekyll'
+gem 'jekyll', '~> 4.4'
 gem 'webrick'
 gem 'rouge'
-gem 'jekyll-scholar', group: :jekyll_plugins
+gem 'rake', '~> 13.2'
+gem 'csv', '~> 3.3'
+gem 'logger', '~> 1.6'
+gem 'rdoc', '~> 6.7'
+gem 'base64', '~> 0.2.0'
+gem 'bigdecimal', '~> 3.1'
+gem 'racc', '~> 1.8'
+gem 'observer', '~> 0.1'
+gem 'bibtex-ruby', '~> 6.2'
+gem 'jekyll-scholar', '~> 7.2', group: :jekyll_plugins
